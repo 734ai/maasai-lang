@@ -81,6 +81,15 @@ python scripts/train_daily_from_hf.py \
   --save-steps 100
 ```
 
+For Kaggle, use the retrying wrapper so unsupported P100 assignments are rerun automatically until a supported GPU is allocated:
+
+```bash
+KAGGLE_CONFIG_DIR="$PWD" .venv/bin/python scripts/run_kaggle_training.py \
+  --max-attempts 5 \
+  --report-to wandb \
+  --embed-local-hf-token
+```
+
 - `scripts/train_daily_from_hf.py` downloads the dataset from HF, restores the latest checkpoint from the model repo, and pushes new checkpoints back with `hub_strategy="checkpoint"`.
 - The default open base model is `Qwen/Qwen2.5-3B-Instruct` so Kaggle and other GPU runners are not blocked on gated-model access.
 - `.github/workflows/daily-train.yml` schedules the same flow for a `self-hosted` GPU runner, reads `HF_DATASET_REPO` / `HF_MODEL_REPO` from GitHub repo variables when set, and uploads a per-run manifest artifact from the runner temp directory.

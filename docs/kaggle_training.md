@@ -73,6 +73,15 @@ Push the kernel to Kaggle:
 KAGGLE_CONFIG_DIR="$PWD" .venv/bin/python scripts/push_kaggle_kernel.py --execute --status
 ```
 
+Or use the retrying wrapper, which keeps rerunning when Kaggle assigns an unsupported P100 / Pascal GPU:
+
+```bash
+KAGGLE_CONFIG_DIR="$PWD" .venv/bin/python scripts/run_kaggle_training.py \
+  --max-attempts 5 \
+  --report-to wandb \
+  --embed-local-hf-token
+```
+
 ## Default Kernel Target
 
 By default the helper creates:
@@ -101,4 +110,5 @@ Example:
 - The default base model is `Qwen/Qwen2.5-3B-Instruct` so the Kaggle runtime is not blocked on gated-model approval.
 - The default kernel profile now uses `batch_size=1` and `gradient_accumulation_steps=32`, and it does not require 4-bit unless you explicitly push with `--require-4bit`.
 - If Kaggle assigns a Tesla P100 / Pascal GPU, the current PyTorch build may not support that architecture. The trainer now fails early with an explicit rerun-on-T4/L4 message instead of crashing deep in model load.
+- `scripts/run_kaggle_training.py` watches the Kaggle run, downloads the current log, and automatically retries when that unsupported-GPU marker appears.
 - If Kaggle shows the run as failed immediately, the first thing to check is whether `HF_TOKEN` was added in Kaggle secrets.

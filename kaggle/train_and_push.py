@@ -92,6 +92,29 @@ def log_runtime_gpu() -> None:
     print(f"PyTorch CUDA architectures: {supported_arches}")
 
 
+def validate_runtime_gpu() -> None:
+    try:
+        import torch
+    except Exception:
+        return
+
+    if not torch.cuda.is_available():
+        return
+
+    capability = torch.cuda.get_device_capability(0)
+    current_arch = f"sm_{capability[0]}{capability[1]}"
+    supported_arches = {arch for arch in torch.cuda.get_arch_list() if arch.startswith("sm_")}
+    if supported_arches and current_arch not in supported_arches:
+        gpu_name = torch.cuda.get_device_name(0)
+        supported = ", ".join(sorted(supported_arches))
+        raise RuntimeError(
+            "The current PyTorch CUDA build does not support the assigned GPU "
+            f"{gpu_name} ({current_arch}). Supported CUDA architectures: {supported}. "
+            "On Kaggle this usually means a Tesla P100 / Pascal runtime was assigned; "
+            "rerun until Kaggle assigns a T4/L4-class GPU, or use Colab/self-hosted training."
+        )
+
+
 def clone_repo(config: dict) -> None:
     if PROJECT_ROOT.exists():
         run(["rm", "-rf", str(PROJECT_ROOT)])
@@ -123,6 +146,7 @@ def main() -> int:
 
     install_dependencies(config)
     log_runtime_gpu()
+    validate_runtime_gpu()
     clone_repo(config)
 
     cmd = [
