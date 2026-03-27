@@ -33,6 +33,8 @@ CORE_TRAINING_REQUIREMENTS = [
     "pyyaml>=6.0.2",
     "huggingface_hub>=0.30.0",
 ]
+DEFAULT_TORCH_VERSION = "2.5.1"
+DEFAULT_TORCH_INDEX_URL = "https://download.pytorch.org/whl/cu118"
 
 
 def run(cmd: list[str], *, cwd: Path | None = None) -> None:
@@ -64,13 +66,26 @@ def get_first_available_secret(*names: str) -> str | None:
 
 
 def install_dependencies(config: dict) -> None:
+    torch_version = str(config.get("torch_version") or DEFAULT_TORCH_VERSION).strip()
+    torch_index_url = str(config.get("torch_index_url") or DEFAULT_TORCH_INDEX_URL).strip()
+    run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "--upgrade",
+            "--force-reinstall",
+            "--index-url",
+            torch_index_url,
+            f"torch=={torch_version}",
+        ]
+    )
+
     requirements = list(CORE_TRAINING_REQUIREMENTS)
     if config.get("report_to") == "wandb":
         requirements.append("wandb>=0.19.0")
-    try:
-        import torch  # noqa: F401
-    except Exception:
-        requirements.append("torch>=2.3.0")
 
     run([sys.executable, "-m", "pip", "install", "-q", "--upgrade", *requirements])
 
@@ -156,6 +171,10 @@ def main() -> int:
         config["dataset_repo"],
         "--model-repo",
         config["model_repo"],
+        "--bucket-uri",
+        config["bucket_uri"],
+        "--bucket-prefix",
+        config["bucket_prefix"],
         "--model-name",
         config["base_model"],
         "--work-dir",

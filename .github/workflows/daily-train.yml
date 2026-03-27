@@ -32,6 +32,7 @@ jobs:
       HF_DATASET_REPO: ${{ vars.HF_DATASET_REPO }}
       HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}
       HF_BASE_MODEL: ${{ vars.HF_BASE_MODEL }}
+      HF_BUCKET_URI: ${{ vars.HF_BUCKET_URI }}
       DEFAULT_MAX_STEPS: "800"
       DEFAULT_SAVE_STEPS: "100"
 
@@ -73,6 +74,9 @@ jobs:
           if [ -z "${HF_BASE_MODEL:-}" ]; then
             echo "HF_BASE_MODEL=Qwen/Qwen2.5-3B-Instruct" >> "$GITHUB_ENV"
           fi
+          if [ -z "${HF_BUCKET_URI:-}" ]; then
+            echo "HF_BUCKET_URI=hf://buckets/NorthernTribe-Research/maasai-project-storage" >> "$GITHUB_ENV"
+          fi
 
       - name: Configure runner work directory
         run: |
@@ -96,6 +100,7 @@ jobs:
           python scripts/train_daily_from_hf.py \
             --dataset-repo "$HF_DATASET_REPO" \
             --model-repo "$HF_MODEL_REPO" \
+            --bucket-uri "$HF_BUCKET_URI" \
             --work-dir "$HF_DAILY_WORKDIR" \
             --require-4bit \
             --max-steps "$MAX_STEPS" \

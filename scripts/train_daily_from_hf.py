@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -59,6 +60,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--require-4bit", action="store_true")
     parser.add_argument("--report-to", type=str, default="none")
     parser.add_argument("--hub-strategy", type=str, default="checkpoint")
+    parser.add_argument(
+        "--bucket-uri",
+        type=str,
+        default=os.getenv("HF_BUCKET_URI", ""),
+        help="Optional HF bucket URI such as hf://buckets/NorthernTribe-Research/maasai-project-storage",
+    )
+    parser.add_argument(
+        "--bucket-prefix",
+        type=str,
+        default=os.getenv("HF_BUCKET_PREFIX", "training_runs"),
+        help="Prefix inside the HF bucket for per-run uploads",
+    )
     parser.add_argument("--story-seed-file", type=str, default="data/raw/maasai_story_generation_seed.jsonl")
     parser.add_argument("--max-bible-passages", type=int, default=48)
     parser.add_argument("--bible-passage-window", type=int, default=3)
@@ -141,6 +154,7 @@ def maybe_configure_wandb(args: argparse.Namespace, project_root: Path) -> None:
 def write_run_manifest(
     manifest_path: Path,
     *,
+    run_id: str,
     args: argparse.Namespace,
     train_file: Path,
     valid_file: Path,
@@ -148,6 +162,7 @@ def write_run_manifest(
     resume_checkpoint: str | None,
 ) -> None:
     manifest = {
+        "run_id": run_id,
         "started_at": datetime.now(timezone.utc).isoformat(),
         "dataset_repo": args.dataset_repo,
         "model_repo": args.model_repo,
@@ -162,6 +177,8 @@ def write_run_manifest(
         "report_to": args.report_to,
         "require_4bit": args.require_4bit,
         "hub_strategy": args.hub_strategy,
+        "bucket_uri": args.bucket_uri,
+        "bucket_prefix": args.bucket_prefix,
         "augment_with_generation_tasks": args.augment_with_generation_tasks,
         "story_seed_file": args.story_seed_file,
         "max_bible_passages": args.max_bible_passages,
@@ -330,6 +347,54 @@ def maybe_disconnect_colab() -> None:
         pass
 
 
+def build_bucket_bundle(
+    *,
+    work_dir: Path,
+    run_id: str,
+    manifest_path: Path,
+    output_dir: Path,
+    training_exit_code: int,
+) -> Path:
+    bundle_dir = work_dir / "bucket_bundle"
+    if bundle_dir.exists():
+        shutil.rmtree(bundle_dir)
+    bundle_dir.mkdir(parents=True, exist_ok=True)
+
+    if manifest_path.exists():
+        shutil.copy2(manifest_path, bundle_dir / "run_manifest.json")
+
+    summary = {
+        "run_id": run_id,
+        "training_exit_code": training_exit_code,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "output_dir_exists": output_dir.exists(),
+        "checkpoints": sorted(path.name for path in output_dir.glob("checkpoint-*") if path.is_dir()),
+    }
+    (bundle_dir / "run_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    if output_dir.exists():
+        shutil.copytree(output_dir, bundle_dir / "model_output", dirs_exist_ok=True)
+
+    return bundle_dir
+
+
+def sync_bundle_to_bucket(args: argparse.Namespace, bundle_dir: Path, run_id: str, token: str) -> None:
+    bucket_uri = args.bucket_uri.strip()
+    if not bucket_uri:
+        return
+
+    destination = bucket_uri.rstrip("/")
+    prefix = args.bucket_prefix.strip().strip("/")
+    if prefix:
+        destination = f"{destination}/{prefix}"
+    destination = f"{destination}/{run_id}"
+
+    cmd = ["hf", "sync", str(bundle_dir), destination, "--token", token]
+    print("Syncing run bundle to HF bucket:")
+    print(" ".join(cmd))
+    subprocess.run(cmd, check=True)
+
+
 def main() -> int:
     args = parse_args()
     project_root = Path(__file__).resolve().parent.parent
@@ -337,6 +402,7 @@ def main() -> int:
     dataset_root = work_dir / "dataset"
     output_dir = work_dir / "model_output"
     manifest_path = work_dir / "run_manifest.json"
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     token = resolve_token(args)
     maybe_configure_wandb(args, project_root)
@@ -358,6 +424,7 @@ def main() -> int:
 
     write_run_manifest(
         manifest_path,
+        run_id=run_id,
         args=args,
         train_file=train_file,
         valid_file=valid_file,
@@ -380,7 +447,19 @@ def main() -> int:
 
     result = subprocess.run(cmd, cwd=project_root, check=False)
 
-    if args.disconnect_colab:
+    try:
+        bundle_dir = build_bucket_bundle(
+            work_dir=work_dir,
+            run_id=run_id,
+            manifest_path=manifest_path,
+            output_dir=output_dir,
+            training_exit_code=result.returncode,
+        )
+        sync_bundle_to_bucket(args, bundle_dir, run_id, token)
+    except Exception as exc:
+        print(f"HF bucket sync skipped or failed: {exc}", file=sys.stderr)
+
+    if args.disconnect_colab and result.returncode == 0:
         maybe_disconnect_colab()
 
     return result.returncode

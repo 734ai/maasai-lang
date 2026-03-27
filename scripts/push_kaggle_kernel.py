@@ -24,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--project-branch", default="main")
     parser.add_argument("--dataset-repo", default="NorthernTribe-Research/maasai-translation-corpus")
     parser.add_argument("--model-repo", default="NorthernTribe-Research/maasai-en-mt")
+    parser.add_argument("--bucket-uri", default="hf://buckets/NorthernTribe-Research/maasai-project-storage")
+    parser.add_argument("--bucket-prefix", default="training_runs")
     parser.add_argument("--base-model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--work-dir", default="/kaggle/working/maasai-daily-hf")
     parser.add_argument("--max-length", type=int, default=768)
@@ -47,6 +49,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-bible-passages", type=int, default=48)
     parser.add_argument("--bible-passage-window", type=int, default=3)
     parser.add_argument("--private-model-repo", action="store_true")
+    parser.add_argument("--torch-version", default="2.5.1")
+    parser.add_argument("--torch-index-url", default="https://download.pytorch.org/whl/cu118")
     parser.add_argument(
         "--require-4bit",
         action="store_true",
@@ -125,6 +129,8 @@ def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
         "project_branch": args.project_branch,
         "dataset_repo": args.dataset_repo,
         "model_repo": args.model_repo,
+        "bucket_uri": args.bucket_uri,
+        "bucket_prefix": args.bucket_prefix,
         "base_model": args.base_model,
         "work_dir": args.work_dir,
         "max_length": args.max_length,
@@ -143,6 +149,8 @@ def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
         "lora_r": args.lora_r,
         "lora_alpha": args.lora_alpha,
         "lora_dropout": args.lora_dropout,
+        "torch_version": args.torch_version,
+        "torch_index_url": args.torch_index_url,
         "report_to": args.report_to,
         "augment_with_generation_tasks": True,
         "story_seed_file": args.story_seed_file,
