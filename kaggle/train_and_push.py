@@ -57,6 +57,14 @@ def get_secret(name: str) -> str | None:
         return None
 
 
+def get_first_available_secret(*names: str) -> str | None:
+    for name in names:
+        value = get_secret(name)
+        if value:
+            return value
+    return None
+
+
 def install_dependencies() -> None:
     run([sys.executable, "-m", "pip", "install", "-q", *TRAINING_REQUIREMENTS])
 
@@ -69,11 +77,16 @@ def clone_repo(config: dict) -> None:
 
 def main() -> int:
     config = load_config()
-    hf_token = get_secret("HF_TOKEN")
+    hf_token = get_first_available_secret("HF_TOKEN", "HUGGINGFACE_TOKEN", "HF_API_KEY")
     if not hf_token:
-        raise RuntimeError("Missing Kaggle secret HF_TOKEN. Add it in Kaggle notebook secrets before running.")
+        raise RuntimeError(
+            "Missing Kaggle secret for Hugging Face access. Add one of: "
+            "HF_TOKEN, HUGGINGFACE_TOKEN, or HF_API_KEY."
+        )
 
-    wandb_api_key = get_secret("WANDB_API_KEY")
+    wandb_api_key = get_first_available_secret("WANDB_API_KEY", "WANDB_TOKEN")
+    if not wandb_api_key:
+        wandb_api_key = config.get("wandb_api_key")
     if wandb_api_key:
         os.environ["WANDB_API_KEY"] = wandb_api_key
 

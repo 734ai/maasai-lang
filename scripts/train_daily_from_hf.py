@@ -79,6 +79,34 @@ def maybe_get_colab_secret(name: str) -> str | None:
         return None
 
 
+def extract_wandb_key(raw: str) -> str | None:
+    raw = raw.strip()
+    if not raw:
+        return None
+
+    try:
+        payload = json.loads(raw)
+        if isinstance(payload, dict):
+            for field in ("WANDB_API_KEY", "wandb_api_key", "key", "api_key", "token"):
+                value = payload.get(field)
+                if value:
+                    return str(value).strip()
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"(wandb_[A-Za-z0-9_]+)", raw)
+    if match:
+        return match.group(1)
+    return None
+
+
+def maybe_get_local_wandb_key(project_root: Path) -> str | None:
+    path = project_root / "wandb-keys.json"
+    if not path.exists():
+        return None
+    return extract_wandb_key(path.read_text(encoding="utf-8"))
+
+
 def resolve_token(args: argparse.Namespace) -> str:
     if args.token:
         return args.token
@@ -92,7 +120,7 @@ def resolve_token(args: argparse.Namespace) -> str:
     raise RuntimeError("No HF token found. Set HF_TOKEN or pass --token.")
 
 
-def maybe_configure_wandb(args: argparse.Namespace) -> None:
+def maybe_configure_wandb(args: argparse.Namespace, project_root: Path) -> None:
     if args.report_to != "wandb":
         return
     for env_var in ("WANDB_API_KEY",):
@@ -101,6 +129,11 @@ def maybe_configure_wandb(args: argparse.Namespace) -> None:
     secret_value = maybe_get_colab_secret("WANDB_API_KEY")
     if secret_value:
         os.environ["WANDB_API_KEY"] = secret_value
+        return
+
+    local_value = maybe_get_local_wandb_key(project_root)
+    if local_value:
+        os.environ["WANDB_API_KEY"] = local_value
 
 
 def write_run_manifest(
@@ -301,7 +334,7 @@ def main() -> int:
     manifest_path = work_dir / "run_manifest.json"
 
     token = resolve_token(args)
-    maybe_configure_wandb(args)
+    maybe_configure_wandb(args, project_root)
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
     login(token=token, add_to_git_credential=False)
 

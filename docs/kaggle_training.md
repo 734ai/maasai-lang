@@ -45,6 +45,10 @@ Optional:
 
 - `WANDB_API_KEY`
 
+If you push the kernel with `--report-to wandb` and a local root-level `wandb-keys.json`
+exists, the helper will embed that W&B key into the Kaggle kernel package.
+That is local-only behavior and the file remains gitignored.
+
 `HF_TOKEN` must have access to the base model if it is gated and must have permission to push to:
 
 - `NorthernTribe-Research/maasai-en-mt`

@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -65,7 +66,39 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def build_runtime_config(args: argparse.Namespace) -> dict:
+def extract_wandb_key(raw: str) -> str | None:
+    raw = raw.strip()
+    if not raw:
+        return None
+
+    try:
+        payload = json.loads(raw)
+        if isinstance(payload, dict):
+            for field in ("WANDB_API_KEY", "wandb_api_key", "key", "api_key", "token"):
+                value = payload.get(field)
+                if value:
+                    return str(value).strip()
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"(wandb_[A-Za-z0-9_]+)", raw)
+    if match:
+        return match.group(1)
+    return None
+
+
+def load_local_wandb_key(project_root: Path) -> str | None:
+    path = project_root / "wandb-keys.json"
+    if not path.exists():
+        return None
+    return extract_wandb_key(path.read_text(encoding="utf-8"))
+
+
+def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
+    wandb_api_key = None
+    if args.report_to == "wandb":
+        wandb_api_key = load_local_wandb_key(project_root)
+
     return {
         "project_git_url": args.project_git_url,
         "project_branch": args.project_branch,
@@ -95,6 +128,7 @@ def build_runtime_config(args: argparse.Namespace) -> dict:
         "max_bible_passages": args.max_bible_passages,
         "bible_passage_window": args.bible_passage_window,
         "private_model_repo": args.private_model_repo,
+        "wandb_api_key": wandb_api_key,
     }
 
 
@@ -146,7 +180,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     (output_dir / "train_and_push.py").write_text(
-        build_embedded_script(project_root, build_runtime_config(args)),
+        build_embedded_script(project_root, build_runtime_config(args, project_root)),
         encoding="utf-8",
     )
     shutil.copy2(project_root / "kaggle" / "requirements-kaggle.txt", output_dir / "requirements-kaggle.txt")
