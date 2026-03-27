@@ -55,3 +55,4 @@ Thumbs.db
 .cache/
 .hf_cache/
 huggingface-api-key.json
+kaggle.json
