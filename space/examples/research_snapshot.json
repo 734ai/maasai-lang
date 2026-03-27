@@ -1,0 +1,114 @@
+{
+  "dataset": {
+    "total_pairs": 9194,
+    "train_pairs": 7814,
+    "valid_pairs": 689,
+    "test_pairs": 691,
+    "balanced_directions": "4,597 en→mas / 4,597 mas→en",
+    "top_domains": [
+      {
+        "domain": "bible",
+        "count": 8444
+      },
+      {
+        "domain": "philosophy",
+        "count": 100
+      },
+      {
+        "domain": "culture",
+        "count": 84
+      },
+      {
+        "domain": "environment",
+        "count": 64
+      },
+      {
+        "domain": "education",
+        "count": 60
+      },
+      {
+        "domain": "ceremony",
+        "count": 58
+      }
+    ]
+  },
+  "glossary": {
+    "total_terms": 103,
+    "protected_terms": 54,
+    "top_domains": [
+      {
+        "domain": "governance",
+        "count": 21
+      },
+      {
+        "domain": "environment",
+        "count": 17
+      },
+      {
+        "domain": "culture",
+        "count": 13
+      },
+      {
+        "domain": "philosophy",
+        "count": 11
+      }
+    ]
+  },
+  "evaluation": {
+    "eval_bleu": 32.45,
+    "eval_chrf": 58.73,
+    "train_loss": 1.892,
+    "eval_loss": 1.987,
+    "note": "Latest local adapter snapshot. The Space may still run in demo mode if the remote model is not available at runtime."
+  },
+  "curated_examples": [
+    {
+      "source_lang": "en",
+      "target_lang": "mas",
+      "domain": "greetings",
+      "source_text": "Hello, how are you?",
+      "target_text": "Supa, ipa eata?"
+    },
+    {
+      "source_lang": "en",
+      "target_lang": "mas",
+      "domain": "gratitude",
+      "source_text": "Thank you very much.",
+      "target_text": "Ashe oleng."
+    },
+    {
+      "source_lang": "en",
+      "target_lang": "mas",
+      "domain": "livestock",
+      "source_text": "Where are the cattle?",
+      "target_text": "Kai inkishu?"
+    },
+    {
+      "source_lang": "mas",
+      "target_lang": "en",
+      "domain": "storytelling",
+      "source_text": "Idaŋat nkatini.",
+      "target_text": "Tell me a story."
+    }
+  ],
+  "research_scope": [
+    "English ↔ Maasai translation with glossary-preserving prompts",
+    "Maasai speech transcription via Paza ASR",
+    "Browser-side voice playback so Maa output can be heard without a server-side TTS dependency",
+    "Cultural context tabs that remain secondary to translation, speech, and preservation workflows"
+  ],
+  "maasai_sections": [
+    "Ldikiri",
+    "Laikipiak",
+    "Samburu",
+    "Ilkisongo",
+    "Ilpurko",
+    "Ildamat",
+    "Ilkeekonyokie",
+    "Ilkaputiei",
+    "Ilmatapato",
+    "Ilwuasinkishu",
+    "Ilarusa",
+    "Ilparakuyo"
+  ]
+}

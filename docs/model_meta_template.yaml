@@ -1,0 +1,22 @@
+project: maasai-en-mt
+title: Maasai-English Translation Model
+task: translation
+languages:
+  - en
+  - mas
+organization: NorthernTribe-Research
+dataset: NorthernTribe-Research/maasai-translation-corpus
+space: NorthernTribe-Research/maasai-language-showcase
+training_method: qlora
+base_model_family: gemma
+publication:
+  artifact_status: scaffold
+  contains_weights: false
+  file_role: metadata-only
+  notes:
+    - This file is intended to be published to the model repo as meta.yaml.
+    - It is a Hub metadata anchor and not a runnable checkpoint.
+    - Update artifact_status and contains_weights when a real adapter or merged model is uploaded.
+hub:
+  download_count_anchor: true
+  intended_filename: meta.yaml

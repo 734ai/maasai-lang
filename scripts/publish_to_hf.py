@@ -248,6 +248,38 @@ def inspect_model_artifacts(model_dir: Path) -> dict:
     return info
 
 
+def build_model_download_meta(model_artifacts: dict) -> str:
+    """Build lightweight Hub metadata for scaffold and trained model repos."""
+    publication_status = "weights_available" if model_artifacts["state"] == "real" else "scaffold"
+    real_files = model_artifacts.get("real_files", [])
+    placeholder_files = model_artifacts.get("placeholder_files", [])
+
+    lines = [
+        "project: maasai-en-mt",
+        "task: translation",
+        "base_model: google/gemma-3-4b-it",
+        "training_recipe: qlora",
+        f"publication_status: {publication_status}",
+        "download_count_anchor: true",
+        "languages:",
+        "  - en",
+        "  - mas",
+        "related_assets:",
+        "  dataset: NorthernTribe-Research/maasai-translation-corpus",
+        "  space: NorthernTribe-Research/maasai-language-showcase",
+        "notes: >-",
+        "  Lightweight repository metadata kept in the model repo so Hugging Face download",
+        "  statistics can resolve against meta.yaml before or alongside full weight uploads.",
+    ]
+
+    if real_files:
+        lines.extend(["real_artifacts:"] + [f"  - {name}" for name in real_files])
+    if placeholder_files:
+        lines.extend(["placeholder_artifacts:"] + [f"  - {name}" for name in placeholder_files])
+
+    return "\n".join(lines) + "\n"
+
+
 def build_model_bundle(project_root: Path, temp_root: Path, model_dir: Path) -> Path:
     bundle = temp_root / "model_bundle"
     model_artifacts = inspect_model_artifacts(model_dir)
@@ -255,6 +287,10 @@ def build_model_bundle(project_root: Path, temp_root: Path, model_dir: Path) -> 
     if model_artifacts["state"] == "real":
         copy_tree(model_dir, bundle)
         copy_file(project_root / "docs" / "model_card.md", bundle / "README.md")
+        (bundle / "meta.yaml").write_text(
+            build_model_download_meta(model_artifacts),
+            encoding="utf-8",
+        )
         return bundle
 
     bundle.mkdir(parents=True, exist_ok=True)
@@ -268,6 +304,10 @@ def build_model_bundle(project_root: Path, temp_root: Path, model_dir: Path) -> 
         "and publish again to upload the actual model."
     )
     (bundle / "README.md").write_text(readme, encoding="utf-8")
+    (bundle / "meta.yaml").write_text(
+        build_model_download_meta(model_artifacts),
+        encoding="utf-8",
+    )
     (bundle / "MODEL_STATUS.json").write_text(
         json.dumps(model_artifacts, indent=2, ensure_ascii=False),
         encoding="utf-8",

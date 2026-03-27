@@ -1,15 +1,11 @@
 """
-Maasai Language Showcase — Advanced Space Application
+Maasai Language Showcase — Space Application
 
-A culturally-themed Gradio interface with:
+A professional Gradio interface for:
 1. Translation (English ↔ Maasai)
-2. Speech Transcription (Maasai ASR via Paza)
-3. Nkatini & Oyete (Folk Stories & Riddles)
-4. Maasai Culture Explorer
-5. Laikipiak History (complete bilingual documentation)
-6. About / Glossary
-
-Design: Dark theme with Maasai beadwork colors
+2. Speech transcription (Maasai ASR via Paza)
+3. Oral literature, culture, and glossary reference
+4. Laikipiak history and project documentation
 """
 
 from __future__ import annotations
@@ -34,6 +30,7 @@ PROJECT_ROOT = APP_DIR if (APP_DIR / "data").exists() else APP_DIR.parent
 CSS_PATH = APP_DIR / "style.css"
 GLOSSARY_PATH = PROJECT_ROOT / "data" / "glossary" / "maasai_glossary.json"
 EXAMPLES_PATH = APP_DIR / "examples" / "sample_prompts.json"
+RESEARCH_SNAPSHOT_PATH = APP_DIR / "examples" / "research_snapshot.json"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("maasai-space")
@@ -48,6 +45,16 @@ _translation_error: str | None = None
 _asr_error: str | None = None
 _glossary_cache: list[dict[str, Any]] | None = None
 _sample_prompts_cache: list[list[str]] | None = None
+_research_snapshot_cache: dict[str, Any] | None = None
+
+INPUT_REQUIRED_PREFIX = "Input required:"
+MODEL_UNAVAILABLE_PREFIX = "Model unavailable:"
+ASR_UNAVAILABLE_PREFIX = "Speech model unavailable:"
+OPERATIONAL_MESSAGE_PREFIXES = (
+    INPUT_REQUIRED_PREFIX,
+    MODEL_UNAVAILABLE_PREFIX,
+    ASR_UNAVAILABLE_PREFIX,
+)
 
 
 def get_translation_pipeline():
@@ -143,6 +150,103 @@ def load_sample_prompts() -> list[list[str]]:
     return _sample_prompts_cache or fallback_examples
 
 
+def load_research_snapshot() -> dict[str, Any]:
+    """Load compact research metadata for the Space."""
+    global _research_snapshot_cache
+    if _research_snapshot_cache is not None:
+        return _research_snapshot_cache
+
+    fallback_snapshot = {
+        "dataset": {
+            "total_pairs": 9194,
+            "train_pairs": 7814,
+            "valid_pairs": 689,
+            "test_pairs": 691,
+            "balanced_directions": "4,597 en→mas / 4,597 mas→en",
+            "top_domains": [
+                {"domain": "bible", "count": 8444},
+                {"domain": "philosophy", "count": 100},
+                {"domain": "culture", "count": 84},
+                {"domain": "environment", "count": 64},
+            ],
+        },
+        "glossary": {
+            "total_terms": 103,
+            "protected_terms": 54,
+            "top_domains": [
+                {"domain": "governance", "count": 21},
+                {"domain": "environment", "count": 17},
+                {"domain": "culture", "count": 13},
+                {"domain": "philosophy", "count": 11},
+            ],
+        },
+        "evaluation": {
+            "eval_bleu": 32.45,
+            "eval_chrf": 58.73,
+            "train_loss": 1.892,
+            "eval_loss": 1.987,
+            "note": "Latest local adapter snapshot; live Space runtime may still be in demo mode if the remote model is unavailable.",
+        },
+        "curated_examples": [
+            {
+                "source_lang": "en",
+                "target_lang": "mas",
+                "domain": "greetings",
+                "source_text": "Hello, how are you?",
+                "target_text": "Supa, ipa eata?",
+            },
+            {
+                "source_lang": "en",
+                "target_lang": "mas",
+                "domain": "gratitude",
+                "source_text": "Thank you very much.",
+                "target_text": "Ashe oleng.",
+            },
+            {
+                "source_lang": "en",
+                "target_lang": "mas",
+                "domain": "livestock",
+                "source_text": "Where are the cattle?",
+                "target_text": "Kai inkishu?",
+            },
+            {
+                "source_lang": "mas",
+                "target_lang": "en",
+                "domain": "storytelling",
+                "source_text": "Idaŋat nkatini.",
+                "target_text": "Tell me a story.",
+            },
+        ],
+        "research_scope": [
+            "English ↔ Maasai translation with glossary-preserving prompts",
+            "Maasai speech transcription via Paza ASR",
+            "Voice playback in-browser so Maa output can be heard, even without dedicated server-side TTS",
+            "Cultural context tabs that stay subordinate to language-use workflows",
+        ],
+        "maasai_sections": [
+            "Ldikiri",
+            "Laikipiak",
+            "Samburu",
+            "Ilkisongo",
+            "Ilpurko",
+            "Ildamat",
+            "Ilkeekonyokie",
+            "Ilkaputiei",
+            "Ilmatapato",
+            "Ilarusa",
+            "Ilparakuyo",
+        ],
+    }
+
+    try:
+        _research_snapshot_cache = json.loads(RESEARCH_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        logger.warning("Failed to load research snapshot: %s", e)
+        _research_snapshot_cache = fallback_snapshot
+
+    return _research_snapshot_cache
+
+
 def get_glossary_domain_choices() -> list[str]:
     """Build glossary domain filters from the glossary file itself."""
     domains = sorted(
@@ -226,6 +330,141 @@ def render_runtime_status() -> str:
         {render_card("Speech", speech)}
     </div>
     """
+
+
+def render_research_snapshot_cards() -> str:
+    """Render high-level research cards under the hero banner."""
+    snapshot = load_research_snapshot()
+    dataset = snapshot.get("dataset", {})
+    glossary = snapshot.get("glossary", {})
+    evaluation = snapshot.get("evaluation", {})
+    return f"""
+    <div class="research-grid">
+        <div class="research-card">
+            <div class="research-kicker">Dataset</div>
+            <div class="research-value">{dataset.get('total_pairs', 'N/A')}</div>
+            <p class="research-detail">Parallel pairs with {dataset.get('train_pairs', 'N/A')} train / {dataset.get('valid_pairs', 'N/A')} valid / {dataset.get('test_pairs', 'N/A')} test.</p>
+        </div>
+        <div class="research-card">
+            <div class="research-kicker">Glossary</div>
+            <div class="research-value">{glossary.get('protected_terms', 'N/A')}</div>
+            <p class="research-detail">Protected Maa terms out of {glossary.get('total_terms', 'N/A')} glossary entries.</p>
+        </div>
+        <div class="research-card">
+            <div class="research-kicker">Evaluation</div>
+            <div class="research-value">{evaluation.get('eval_bleu', 'N/A')}</div>
+            <p class="research-detail">Latest local BLEU snapshot with chrF++ at {evaluation.get('eval_chrf', 'N/A')}.</p>
+        </div>
+    </div>
+    """
+
+
+def render_research_overview() -> str:
+    """Render the main research tab content."""
+    snapshot = load_research_snapshot()
+    dataset = snapshot.get("dataset", {})
+    glossary = snapshot.get("glossary", {})
+    evaluation = snapshot.get("evaluation", {})
+    curated_examples = snapshot.get("curated_examples", [])
+    research_scope = snapshot.get("research_scope", [])
+    sections = snapshot.get("maasai_sections", [])
+
+    domain_items = "".join(
+        f"<li><strong>{escape(str(item.get('domain', 'other')).title())}:</strong> {escape(str(item.get('count', 0)))}</li>"
+        for item in dataset.get("top_domains", [])
+    )
+    glossary_items = "".join(
+        f"<li><strong>{escape(str(item.get('domain', 'other')).title())}:</strong> {escape(str(item.get('count', 0)))}</li>"
+        for item in glossary.get("top_domains", [])
+    )
+    scope_items = "".join(f"<li>{escape(str(item))}</li>" for item in research_scope)
+    example_cards = "".join(
+        f"""
+        <div class="example-card">
+            <div class="example-meta">{escape(str(item.get('domain', 'general')).title())} · {escape(str(item.get('source_lang', 'en')))}→{escape(str(item.get('target_lang', 'mas')))}</div>
+            <p><strong>Source:</strong> {escape(str(item.get('source_text', '')))}</p>
+            <p><strong>Target:</strong> {escape(str(item.get('target_text', '')))}</p>
+        </div>
+        """
+        for item in curated_examples
+    )
+    sections_text = " · ".join(escape(str(item)) for item in sections)
+
+    return f"""
+    <div class="research-section">
+        <h2>Research Snapshot</h2>
+        <p>This Space packages translation, transcription, and cultural reference into one research interface. The figures below show the data and evaluation context behind the live workflow.</p>
+        {render_research_snapshot_cards()}
+    </div>
+    <div class="research-section">
+        <h3>Evaluation and Training Signals</h3>
+        <div class="insight-grid">
+            <div class="insight-card">
+                <div class="insight-label">BLEU</div>
+                <div class="insight-value">{escape(str(evaluation.get('eval_bleu', 'N/A')))}</div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-label">chrF++</div>
+                <div class="insight-value">{escape(str(evaluation.get('eval_chrf', 'N/A')))}</div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-label">Train Loss</div>
+                <div class="insight-value">{escape(str(evaluation.get('train_loss', 'N/A')))}</div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-label">Eval Loss</div>
+                <div class="insight-value">{escape(str(evaluation.get('eval_loss', 'N/A')))}</div>
+            </div>
+        </div>
+        <p class="research-note">{escape(str(evaluation.get('note', '')))}</p>
+    </div>
+    <div class="research-two-col">
+        <div class="research-section">
+            <h3>Data Composition</h3>
+            <p><strong>Directions:</strong> {escape(str(dataset.get('balanced_directions', 'N/A')))}</p>
+            <ul>{domain_items}</ul>
+        </div>
+        <div class="research-section">
+            <h3>Glossary Coverage</h3>
+            <p><strong>Protected Terms:</strong> {escape(str(glossary.get('protected_terms', 'N/A')))} / {escape(str(glossary.get('total_terms', 'N/A')))}</p>
+            <ul>{glossary_items}</ul>
+        </div>
+    </div>
+    <div class="research-two-col">
+        <div class="research-section">
+            <h3>Research Scope</h3>
+            <ul>{scope_items}</ul>
+        </div>
+        <div class="research-section">
+            <h3>Sections Represented</h3>
+            <p>{sections_text}</p>
+        </div>
+    </div>
+    <div class="research-section">
+        <h3>Curated Translation Pairs</h3>
+        <div class="example-grid">{example_cards}</div>
+    </div>
+    """
+
+
+def render_section_header(title: str, body: str, kicker: str | None = None, meta: str | None = None) -> str:
+    """Render a consistent section header block."""
+    kicker_html = f"<div class='section-kicker'>{escape(kicker)}</div>" if kicker else ""
+    meta_html = f"<p class='section-meta'>{meta}</p>" if meta else ""
+    return (
+        "<div class='section-header'>"
+        f"{kicker_html}"
+        f"<h2>{escape(title)}</h2>"
+        f"<p class='section-copy'>{body}</p>"
+        f"{meta_html}"
+        "</div>"
+    )
+
+
+def is_operational_message(text: str) -> bool:
+    """Return whether the text is an operational state message, not translatable output."""
+    stripped = text.strip()
+    return any(stripped.startswith(prefix) for prefix in OPERATIONAL_MESSAGE_PREFIXES)
 
 
 def glossary_candidates(entry: dict[str, Any], direction: str) -> list[str]:
@@ -323,13 +562,13 @@ def render_glossary_matches(glossary_matches: list[dict[str, Any]], direction: s
     """Render matched glossary entries for the UI."""
     if not glossary_matches:
         return (
-            "### Glossary Support\n"
-            "No protected glossary terms were detected in this text. Translation will proceed without extra hints."
+            "### Translation Guidance\n"
+            "No glossary matches were detected in this input. Translation will proceed without additional term constraints."
         )
 
     lines = [
-        "### Glossary Support",
-        "These entries were detected and added as guidance for this translation:",
+        "### Translation Guidance",
+        "These entries were matched and added to the translation prompt:",
         "",
     ]
     for item in glossary_matches:
@@ -352,29 +591,31 @@ def render_glossary_matches(glossary_matches: list[dict[str, Any]], direction: s
 def render_voice_panel(text: str, direction: str) -> str:
     """Render a browser-side speech panel for translated output."""
     text = text.strip()
-    if not text or text.startswith("⚠️") or text.startswith("🔗"):
+    if not text or is_operational_message(text):
         return """
         <div class="voice-panel is-empty">
-            <div class="voice-heading">Voice</div>
-            <p class="voice-note">Translate text first to enable browser playback.</p>
+            <div class="voice-heading">Voice Playback</div>
+            <p class="voice-note">Translate or transcribe content first to enable browser playback.</p>
         </div>
         """
 
+    spoken_text = text.split("\n\n", 1)[0].strip()
+
     if direction == "English → Maasai":
         target_lang = "sw-KE"
-        heading = "Hear Maa Translation"
+        heading = "Voice Playback for Maa Output"
         note = (
-            "Browser speech is used here. Most devices do not expose a dedicated Maa voice, "
-            "so the app requests Kenyan Swahili as the closest regional fallback when reading Maa aloud."
+            "Playback uses the browser Web Speech API. Because dedicated Maa voices are uncommon, "
+            "the app requests the closest available regional voice when reading Maa aloud."
         )
         voice_preferences = ["sw-KE", "sw", "en-KE", "en-US"]
     else:
         target_lang = "en-US"
-        heading = "Hear English Translation"
+        heading = "Voice Playback for English Output"
         note = "Playback uses the browser's available English voice."
         voice_preferences = ["en-KE", "en-US", "en-GB"]
 
-    safe_text = json.dumps(text)
+    safe_text = json.dumps(spoken_text)
     safe_lang = json.dumps(target_lang)
     safe_preferences = json.dumps(voice_preferences)
 
@@ -408,13 +649,13 @@ def render_voice_panel(text: str, direction: str) -> str:
                     window.speechSynthesis.speak(utterance);
                 }})()'
             >
-                ▶ Hear Audio
+                Play audio
             </button>
             <button
                 class="voice-button secondary"
                 onclick='if ("speechSynthesis" in window) {{ window.speechSynthesis.cancel(); }}'
             >
-                ■ Stop
+                Stop playback
             </button>
         </div>
         <p class="voice-note">{note}</p>
@@ -429,7 +670,7 @@ def translate_text(
 ) -> str:
     """Translate text between English and Maasai."""
     if not text.strip():
-        return "⚠️ Please enter text to translate."
+        return f"{INPUT_REQUIRED_PREFIX} enter text to translate."
 
     glossary_matches = glossary_matches or find_glossary_matches(text, direction)
 
@@ -452,8 +693,8 @@ def translate_with_context(text: str, direction: str) -> tuple[str, str, str, st
     """Translate text and return glossary guidance plus runtime state."""
     if not text.strip():
         return (
-            "⚠️ Please enter text to translate.",
-            "### Glossary Support\nEnter text to surface protected-term guidance.",
+            f"{INPUT_REQUIRED_PREFIX} enter text to translate.",
+            "### Translation Guidance\nEnter text to surface glossary-aware guidance.",
             render_runtime_status(),
             render_voice_panel("", direction),
         )
@@ -498,19 +739,18 @@ def _demo_translate(text: str, direction: str) -> str:
     if direction == "English → Maasai":
         result = demo_en_to_mas.get(text_lower)
         if result:
-            return f"{result}\n\n💡 *Demo mode — connect a fine-tuned model for full translation*"
+            return f"{result}\n\nDemo mode: connect the fine-tuned model for broader translation coverage."
         return (
-            f"🔗 Model not loaded. In production, '{text}' would be translated to Maasai using the "
-            f"fine-tuned Gemma model.\n\n"
-            f"💡 *Deploy with a fine-tuned model for accurate translations.*"
+            f"{MODEL_UNAVAILABLE_PREFIX} '{text}' would be translated to Maa by the fine-tuned model in a full deployment.\n\n"
+            "Deployment note: load the translation model to enable live inference."
         )
     else:
         result = demo_mas_to_en.get(text_lower)
         if result:
-            return f"{result}\n\n💡 *Demo mode — connect a fine-tuned model for full translation*"
+            return f"{result}\n\nDemo mode: connect the fine-tuned model for broader translation coverage."
         return (
-            f"🔗 Model not loaded. In production, '{text}' would be translated to English.\n\n"
-            f"💡 *Deploy with a fine-tuned model for accurate translations.*"
+            f"{MODEL_UNAVAILABLE_PREFIX} '{text}' would be translated to English by the fine-tuned model in a full deployment.\n\n"
+            "Deployment note: load the translation model to enable live inference."
         )
 
 
@@ -520,14 +760,13 @@ def _demo_translate(text: str, direction: str) -> str:
 def transcribe_audio(audio_path: str) -> str:
     """Transcribe Maasai speech to text."""
     if audio_path is None:
-        return "⚠️ Please upload or record audio."
+        return f"{INPUT_REQUIRED_PREFIX} upload or record audio."
 
     asr = get_asr_pipeline()
     if asr is None:
         return (
-            "🔗 ASR model not loaded. In production, this would transcribe Maasai speech using "
-            f"Microsoft Paza ({ASR_MODEL_ID}).\n\n"
-            "💡 *Deploy with the ASR model for speech transcription.*"
+            f"{ASR_UNAVAILABLE_PREFIX} this deployment needs Microsoft Paza ({ASR_MODEL_ID}) for live transcription.\n\n"
+            "Deployment note: load the speech model to enable live transcription."
         )
 
     result = asr(audio_path)
@@ -537,21 +776,34 @@ def transcribe_audio(audio_path: str) -> str:
 def transcribe_and_translate(audio_path: str) -> tuple[str, str]:
     """Transcribe and then translate."""
     transcription = transcribe_audio(audio_path)
-    if transcription.startswith("⚠️") or transcription.startswith("🔗"):
+    if is_operational_message(transcription):
         return transcription, ""
     translation = translate_text(transcription, "Maasai → English")
     return transcription, translation
 
 
-def transcribe_audio_with_status(audio_path: str) -> tuple[str, str]:
+def transcribe_audio_with_status(audio_path: str) -> tuple[str, str, str, str, str]:
     """Transcribe audio and return updated runtime status."""
-    return transcribe_audio(audio_path), render_runtime_status()
+    transcription = transcribe_audio(audio_path)
+    return (
+        transcription,
+        "",
+        render_runtime_status(),
+        render_voice_panel(transcription, "English → Maasai"),
+        render_voice_panel("", "Maasai → English"),
+    )
 
 
-def transcribe_and_translate_with_status(audio_path: str) -> tuple[str, str, str]:
+def transcribe_and_translate_with_status(audio_path: str) -> tuple[str, str, str, str, str]:
     """Transcribe audio, translate it, and return updated runtime status."""
     transcription, translation = transcribe_and_translate(audio_path)
-    return transcription, translation, render_runtime_status()
+    return (
+        transcription,
+        translation,
+        render_runtime_status(),
+        render_voice_panel(transcription, "English → Maasai"),
+        render_voice_panel(translation, "Maasai → English"),
+    )
 
 
 def search_glossary(query: str, domain_filter: str = "all") -> str:
@@ -579,7 +831,7 @@ def search_glossary(query: str, domain_filter: str = "all") -> str:
 
     if not results:
         if query_lower:
-            return f"❌ No results found for '{query}'."
+            return f"### Glossary Search\nNo glossary matches were found for `{query}`."
         return "### Glossary Overview\nChoose a domain or type a term to explore the glossary."
 
     if not query_lower:
@@ -606,14 +858,15 @@ def search_glossary(query: str, domain_filter: str = "all") -> str:
     # Format results as markdown
     output = header
     for i, entry in enumerate(results, 1):
-        preserve_badge = "🔒 Protected" if entry.get("preserve") else ""
+        preserve_note = "Preserve Maa form in translation" if entry.get("preserve") else "Translate normally"
+        alternates = ", ".join(entry.get("alternate_spellings", [])) or "None listed"
         output += f"""
 **{i}. {entry.get('term_maasai', '')}** — *{entry.get('term_english', '')}*  
-Domain: *{entry.get('domain', 'N/A')}* {preserve_badge}  
-Notes: {entry.get('notes', 'N/A')}  
-Alternates: {', '.join(entry.get('alternate_spellings', []))}  
+ Domain: *{entry.get('domain', 'N/A')}*  
+ Handling: {preserve_note}  
+ Notes: {entry.get('notes', 'N/A')}  
+ Alternates: {alternates}
 
----
 """
 
     return output
@@ -622,7 +875,7 @@ Alternates: {', '.join(entry.get('alternate_spellings', []))}
 
 
 NKATINI_STORIES = {
-    "🦁 How Enkai Gave Cattle to the Maasai": {
+    "How Enkai Gave Cattle to the Maasai": {
         "en": (
             "In the beginning, Enkai (God) lived on Earth together with the people. Enkai owned all the cattle "
             "in the world. When the time came for Enkai to ascend to the sky, Enkai decided to entrust the "
@@ -647,7 +900,7 @@ NKATINI_STORIES = {
             "Ilmaasai eidaŋat: **'Meishoo iyiook enkai inkishu o-inkujit'** — Enkai eaku inkishu nabo esiaai."
         ),
     },
-    "⚔️ The Lion and the Warrior": {
+    "The Lion and the Warrior": {
         "en": (
             "There was once a young olmurrani (warrior) who was sent to prove his bravery. The elders "
             "told him: 'Go into the bush and face the lion. Do not run. The lion will see your courage "
@@ -671,7 +924,7 @@ NKATINI_STORIES = {
             "**Enaitoti:** Eidim meeta eitoliki, kake eidim pee itu ne ikilikuano."
         ),
     },
-    "🌟 The Origin of the Stars": {
+    "The Origin of the Stars": {
         "en": (
             "When Enkai created the world, the sky was completely dark at night. The Maasai could not "
             "see their cattle, and the predators hunted freely in the darkness.\n\n"
@@ -698,7 +951,7 @@ NKATINI_STORIES = {
             "**Enaitoti:** Enkidol en yeyo eidim Enkai. Enkolooŋ eaku pee eidol."
         ),
     },
-    "👩 The Woman Who Saved the Enkang": {
+    "The Woman Who Saved the Enkang": {
         "en": (
             "There was a time when a drought came so severe that the rivers dried and the grass "
             "withered. The cattle began to die, one by one. The men of the enkang sat in despair.\n\n"
@@ -723,7 +976,7 @@ NKATINI_STORIES = {
             "**Enaitoti:** Intoyie ake nanyore en enkoitoi. Enkoitoi en intoyie ake enkishui."
         ),
     },
-    "📱 The Warrior with a Phone (Modern)": {
+    "The Warrior with a Phone": {
         "en": (
             "Lemayian was an olmurrani who herded cattle in the Maasai Mara. One day, a tourist left "
             "behind a smartphone. Lemayian was curious.\n\n"
@@ -750,7 +1003,7 @@ NKATINI_STORIES = {
             "**Enaitoti:** Enyamal en taata eidim oloshon en kuna netii eidim sidai."
         ),
     },
-    "🌍 The Bead Maker's Daughter Goes Online (Modern)": {
+    "The Bead Maker's Daughter Goes Online": {
         "en": (
             "Naipanoi learned beadwork from her mother, who learned from her mother, going back "
             "generations. The intricate patterns — red for bravery, blue for the sky, green for the "
@@ -825,7 +1078,7 @@ OYETE_RIDDLES = [
 # LAIKIPIAK COMPLETE DOCUMENTATION
 # ============================================================================
 LAIKIPIAK_DOC = """
-# 🛡️ The Laikipiak — Ilmaasai le Laikipia
+# The Laikipiak — Ilmaasai le Laikipia
 
 ## History — Olesere en Laikipiak
 
@@ -1007,7 +1260,7 @@ oltureshi. Kake Ilmaasai eidim — netii iltureshi, iltung'anak eidim ne oloshon
 # CULTURE CONTENT
 # ============================================================================
 CULTURE_SECTIONS = {
-    "🙏 Philosophy & Spirituality": (
+    "Philosophy and Spirituality": (
         "### Enkai — The Supreme Deity\n\n"
         "Enkai (also Engai, Ngai) is the supreme god of the Maasai. Enkai has two aspects:\n\n"
         "- **Enkai Narok** (Black God) — benevolent, associated with rain, fertility, dark rain clouds\n"
@@ -1021,7 +1274,7 @@ CULTURE_SECTIONS = {
         "| **Osilalei** | Peace | Highest aspiration — peace-making involves sharing milk |\n"
         "| **Olelem** | Blessing | Elders bless through prayer and sacred spitting |"
     ),
-    "⚔️ Age-Set System": (
+    "Age-Set System": (
         "### Olporror — The Age-Set\n\n"
         "The age-set system organizes Maasai men into named generational groups:\n\n"
         "1. **Enkipaata** — Pre-circumcision gathering, boys travel between homesteads\n"
@@ -1031,7 +1284,7 @@ CULTURE_SECTIONS = {
         "5. **Olngesher** — Promotion to senior elder with decision-making authority\n\n"
         "Named age-sets include: *Ilterito, Ilnyangusi, Iseuri, Ilkitoip*"
     ),
-    "🏠 Enkang (Homestead)": (
+    "Enkang (Homestead)": (
         "### Structure\n\n"
         "- **Olale** — Circular thornbush fence protecting against predators\n"
         "- **Enkajijik** — Houses arranged in a circle (built by women from mud, dung, sticks)\n"
@@ -1041,7 +1294,7 @@ CULTURE_SECTIONS = {
         "Each enkang houses an extended family: a senior elder, his wives (each with her own enkaji), "
         "children, and sometimes married sons. The community moves when grazing is depleted."
     ),
-    "🐄 Cattle Culture": (
+    "Cattle Culture": (
         "### Inkishu — The Center of Life\n\n"
         "'Meishoo iyiook enkai inkishu o-inkujit' — God gave us cattle and grass.\n\n"
         "- **Wealth** — Measured in cattle, not money\n"
@@ -1051,19 +1304,19 @@ CULTURE_SECTIONS = {
         "- **Identity** — Every animal named, known by markings and lineage\n"
         "- **Vocabulary** — Dozens of words for cattle colors, horn shapes, ages"
     ),
-    "📿 Beadwork & Colors": (
+    "Beadwork and Colors": (
         "### Osinka — Beadwork Meanings\n\n"
         "| Color | Meaning |\n"
         "|---|---|\n"
-        "| 🔴 **Red** | Bravery, strength, unity, blood |\n"
-        "| 🔵 **Blue** | Sky, water, energy — gift of rain from Enkai |\n"
-        "| 🟢 **Green** | Land, health, pastures that feed cattle |\n"
-        "| ⚪ **White** | Peace, purity — used in ceremonies |\n"
-        "| 🟠 **Orange** | Hospitality, warmth, community |\n"
-        "| 🟡 **Yellow** | Fertility, growth, sun |\n"
-        "| ⚫ **Black** | The people, solidarity, rain clouds |"
+        "| **Red** | Bravery, strength, unity, blood |\n"
+        "| **Blue** | Sky, water, energy — gift of rain from Enkai |\n"
+        "| **Green** | Land, health, pastures that feed cattle |\n"
+        "| **White** | Peace, purity — used in ceremonies |\n"
+        "| **Orange** | Hospitality, warmth, community |\n"
+        "| **Yellow** | Fertility, growth, sun |\n"
+        "| **Black** | The people, solidarity, rain clouds |"
     ),
-    "🗺️ Iloshon (Sections)": (
+    "Iloshon (Sections)": (
         "### Major Maasai Sections\n\n"
         "| Section | Location | Notable |\n"
         "|---|---|---|\n"
@@ -1100,42 +1353,45 @@ def build_app() -> gr.Blocks:
         css=custom_css,
         theme=gr.themes.Base(
             primary_hue=gr.themes.Color(
-                c50="#FDE8E5", c100="#F9C1BB", c200="#F49992",
-                c300="#EF7268", c400="#EA4A3F", c500="#C0392B",
-                c600="#A73125", c700="#8E291F", c800="#742119", c900="#5B1913",
-                c950="#3D100C",
+                c50="#F7F1EF", c100="#E9D8D3", c200="#D9BEB5",
+                c300="#C89F92", c400="#B37B6A", c500="#8D4638",
+                c600="#76372C", c700="#602B22", c800="#4A211A", c900="#341712",
+                c950="#1B0C09",
             ),
-            secondary_hue="orange",
+            secondary_hue="gray",
             neutral_hue="gray",
-            font=["Inter", "system-ui", "sans-serif"],
+            font=["IBM Plex Sans", "system-ui", "sans-serif"],
         ),
     ) as app:
-        # ===== HERO BANNER =====
         gr.HTML("""
         <div class="hero-banner">
-            <h1>🛡️ Enkutuk oo lMaa — Maasai Language Showcase</h1>
+            <div class="hero-kicker">NorthernTribe-Research</div>
+            <h1>Enkutuk oo lMaa</h1>
             <p>
-                Research-grade English ↔ Maasai translation, speech transcription, 
-                and cultural preservation platform. Built with respect for the Maa language 
-                and the traditions of the Maasai people.
+                Research interface for English ↔ Maa translation, Maa speech transcription,
+                and glossary-backed cultural reference built for language preservation.
             </p>
             <div class="hero-subtitle">
-                <strong>NorthernTribe-Research</strong> · Powered by Gemma + QLoRA + Paza ASR 
-                · Covering all iloshon: Ldikiri · Laikipiak · Samburu · Ilkisongo · Ilpurko · and more
+                Translation with Gemma and QLoRA · Speech with Paza · Coverage spanning protected terms,
+                oral literature, and historical reference across major iloshon
             </div>
         </div>
-        <div class="beadwork-stripe"></div>
+        <div class="heritage-band"></div>
         """)
+        gr.HTML(render_research_snapshot_cards())
 
-        # ===== TABS =====
         with gr.Tabs():
-            # ─── TAB 1: Translation ───
-            with gr.Tab("🔤 Translation"):
-                gr.HTML("<h2 style='color:#C0392B; margin-bottom:0.5rem;'>English ↔ Maasai Translation</h2>")
+            with gr.Tab("Translation"):
+                gr.HTML(
+                    render_section_header(
+                        "Translation",
+                        "English and Maa translation with glossary preservation embedded directly into the inference workflow.",
+                        kicker="Core workflow",
+                    )
+                )
                 gr.HTML(
                     "<p class='workflow-note'>"
-                    "Focus here for the core Space workflow: translation first, cultural reference second. "
-                    "Detected glossary terms are surfaced inline so protected Maa vocabulary is not hidden in a separate tab."
+                    "Protected Maa terminology is surfaced beside the output and injected into the prompt when matched."
                     "</p>"
                 )
                 translation_status = gr.HTML(render_runtime_status())
@@ -1152,10 +1408,10 @@ def build_app() -> gr.Blocks:
                     with gr.Column():
                         input_text = gr.Textbox(
                             label="Input Text",
-                            placeholder="Tipika sirata...",
+                            placeholder="Enter text for translation.",
                             lines=5,
                         )
-                        translate_btn = gr.Button("🔄 Translate", variant="primary", size="lg")
+                        translate_btn = gr.Button("Translate", variant="primary", size="lg")
 
                     with gr.Column():
                         output_text = gr.Textbox(
@@ -1165,7 +1421,7 @@ def build_app() -> gr.Blocks:
                         )
                         voice_panel = gr.HTML(render_voice_panel("", "English → Maasai"))
                         glossary_matches = gr.Markdown(
-                            value="### Glossary Support\nDetected protected terms will appear here when you translate.",
+                            value="### Translation Guidance\nDetected glossary matches will appear here after translation.",
                             elem_classes=["glossary-panel"],
                         )
 
@@ -1175,21 +1431,24 @@ def build_app() -> gr.Blocks:
                     outputs=[output_text, glossary_matches, translation_status, voice_panel],
                 )
 
-                gr.HTML("<div class='beadwork-stripe'></div>")
-
                 gr.Examples(
                     examples=load_sample_prompts(),
                     inputs=[input_text, direction_dd],
-                    label="📝 Try These Examples",
+                    label="Reference prompts",
                 )
 
-            # ─── TAB 2: Speech ───
-            with gr.Tab("🎙️ Speech"):
-                gr.HTML("<h2 style='color:#C0392B; margin-bottom:0.5rem;'>Maasai Speech Transcription</h2>")
-                gr.HTML(f"<p style='color:#888;'>Powered by Microsoft Paza (<code>{ASR_MODEL_ID}</code>)</p>")
+            with gr.Tab("Speech"):
+                gr.HTML(
+                    render_section_header(
+                        "Speech",
+                        "Upload or record Maa speech, transcribe it, and optionally bridge it into English.",
+                        kicker="Speech workflow",
+                        meta=f"Speech model: <code>{escape(ASR_MODEL_ID)}</code>",
+                    )
+                )
                 gr.HTML(
                     "<p class='workflow-note'>"
-                    "This path stays within scope: record or upload Maa speech, transcribe it, then optionally bridge it into English."
+                    "This flow stays within scope: speech capture first, transcription second, translation only when needed."
                     "</p>"
                 )
                 speech_status = gr.HTML(render_runtime_status())
@@ -1201,43 +1460,55 @@ def build_app() -> gr.Blocks:
                             type="filepath",
                         )
                         with gr.Row():
-                            transcribe_btn = gr.Button("📝 Transcribe", variant="primary")
-                            transcribe_translate_btn = gr.Button("📝→🔤 Transcribe & Translate", variant="secondary")
+                            transcribe_btn = gr.Button("Transcribe", variant="primary")
+                            transcribe_translate_btn = gr.Button("Transcribe and translate", variant="secondary")
 
                     with gr.Column():
                         transcription_out = gr.Textbox(label="Transcription (Maasai)", lines=4, interactive=False)
+                        speech_maasai_voice = gr.HTML(render_voice_panel("", "English → Maasai"))
                         translation_out = gr.Textbox(label="Translation (English)", lines=4, interactive=False)
+                        speech_english_voice = gr.HTML(render_voice_panel("", "Maasai → English"))
 
                 transcribe_btn.click(
                     fn=transcribe_audio_with_status,
                     inputs=audio_input,
-                    outputs=[transcription_out, speech_status],
+                    outputs=[
+                        transcription_out,
+                        translation_out,
+                        speech_status,
+                        speech_maasai_voice,
+                        speech_english_voice,
+                    ],
                 )
                 transcribe_translate_btn.click(
                     fn=transcribe_and_translate_with_status,
                     inputs=audio_input,
-                    outputs=[transcription_out, translation_out, speech_status],
+                    outputs=[
+                        transcription_out,
+                        translation_out,
+                        speech_status,
+                        speech_maasai_voice,
+                        speech_english_voice,
+                    ],
                 )
 
-            # ─── TAB 3: Nkatini & Oyete ───
-            with gr.Tab("📖 Nkatini & Oyete"):
-                gr.HTML("""
-                <div class="culture-section">
-                    <h2>📖 Nkatini (Folk Stories) & Oyete (Riddles)</h2>
-                    <p style="color:#B0B0B0;">
-                        <strong>Nkatini</strong> are traditional Maasai folk tales, told by elders around the fire. 
-                        They teach moral lessons, preserve history, and transmit cultural values.<br>
-                        <strong>Oyete</strong> are riddles exchanged among community members to sharpen the mind.
-                    </p>
-                </div>
-                """)
-
-                gr.HTML("<h3 style='color:#E67E22; margin:1rem 0;'>📚 Select a Story (Bilingual: English & Maasai)</h3>")
+            with gr.Tab("Stories"):
+                gr.HTML(
+                    render_section_header(
+                        "Oral Literature",
+                        "Curated nkatini and oyete in bilingual form for learning, preservation, and reference.",
+                        kicker="Reference content",
+                    )
+                )
+                gr.HTML(
+                    "<h3 class='content-subheading'>Story selection</h3>"
+                    "<p class='subsection-copy'>Select a bilingual story to review the English and Maa versions side by side.</p>"
+                )
 
                 story_select = gr.Dropdown(
                     choices=list(NKATINI_STORIES.keys()),
                     value=list(NKATINI_STORIES.keys())[0],
-                    label="Choose a Nkatini",
+                    label="Choose a story",
                     interactive=True,
                 )
 
@@ -1249,17 +1520,17 @@ def build_app() -> gr.Blocks:
 
                 def load_story(title):
                     story = NKATINI_STORIES.get(title, {})
-                    en_text = f"### 🇬🇧 English\n\n{story.get('en', '')}"
-                    mas_text = f"### 🔴 Maasai (Maa)\n\n{story.get('mas', '')}"
+                    en_text = f"### English\n\n{story.get('en', '')}"
+                    mas_text = f"### Maa\n\n{story.get('mas', '')}"
                     return en_text, mas_text
 
                 story_select.change(fn=load_story, inputs=story_select, outputs=[story_en, story_mas])
                 app.load(fn=load_story, inputs=story_select, outputs=[story_en, story_mas])
 
-                gr.HTML("<div class='beadwork-stripe'></div>")
-
-                # Oyete Section
-                gr.HTML("<h3 style='color:#E67E22; margin:1rem 0;'>🧩 Oyete — Maasai Riddles</h3>")
+                gr.HTML(
+                    "<h3 class='content-subheading'>Riddles</h3>"
+                    "<p class='subsection-copy'>Short Maa riddles with bilingual prompts and answer reveals.</p>"
+                )
 
                 riddle_html = ""
                 for i, r in enumerate(OYETE_RIDDLES):
@@ -1268,40 +1539,38 @@ def build_app() -> gr.Blocks:
                         <h3>Oyete #{i+1}</h3>
                         <p><strong>Maasai:</strong> <em>{r['riddle_mas']}</em></p>
                         <p><strong>English:</strong> <em>{r['riddle_en']}</em></p>
-                        <details><summary style="color:#D4AC0D; cursor:pointer; font-weight:600;">
-                            🔓 Reveal Answer</summary>
-                            <p style="margin-top:0.5rem; color:#27AE60;"><strong>{r['answer']}</strong></p>
+                        <details>
+                            <summary>Show answer</summary>
+                            <p class="answer-text"><strong>{r['answer']}</strong></p>
                         </details>
                     </div>
                     """
                 gr.HTML(riddle_html)
 
-            # ─── TAB 4: Culture ───
-            with gr.Tab("🏛️ Culture"):
-                gr.HTML("""
-                <div class="culture-section">
-                    <h2>🏛️ Maasai Culture Explorer</h2>
-                    <p style="color:#B0B0B0;">
-                        Explore the philosophy, social systems, ceremonies, and daily life of the Maasai people.
-                    </p>
-                </div>
-                """)
+            with gr.Tab("Culture"):
+                gr.HTML(
+                    render_section_header(
+                        "Culture",
+                        "Reference material on philosophy, social systems, ceremonies, and daily life in Maasai communities.",
+                        kicker="Cultural context",
+                    )
+                )
 
                 for section_title, content in CULTURE_SECTIONS.items():
                     with gr.Accordion(section_title, open=False):
                         gr.Markdown(content)
 
-            # ─── TAB 5: Glossary ───
-            with gr.Tab("📚 Glossary"):
-                gr.HTML("""
-                <div class="culture-section">
-                    <h2>📚 Maasai Glossary & Term Search</h2>
-                    <p style="color:#B0B0B0;">
-                        Search protected cultural terms and learn their meanings, domains, and cultural significance.
-                        🔒 Protected terms are preserved exactly in translations to prevent cultural flattening.
-                    </p>
-                </div>
-                """)
+            with gr.Tab("Research"):
+                gr.HTML(render_research_overview())
+
+            with gr.Tab("Glossary"):
+                gr.HTML(
+                    render_section_header(
+                        "Glossary",
+                        "Search protected Maa terminology by term or domain. Glossary handling is designed to prevent cultural flattening in translation.",
+                        kicker="Reference layer",
+                    )
+                )
 
                 with gr.Row():
                     with gr.Column():
@@ -1318,7 +1587,7 @@ def build_app() -> gr.Blocks:
                             interactive=True,
                         )
 
-                search_btn = gr.Button("🔍 Search Glossary", variant="primary")
+                search_btn = gr.Button("Search", variant="primary")
                 glossary_results = gr.Markdown(
                     value=search_glossary("", "all"),
                     label="Results",
@@ -1336,9 +1605,6 @@ def build_app() -> gr.Blocks:
                     outputs=glossary_results,
                 )
 
-                gr.HTML("<div class='beadwork-stripe'></div>")
-
-                # Glossary statistics
                 glossary_data = load_glossary_data()
                 if glossary_data:
                     domain_counts = {}
@@ -1350,144 +1616,134 @@ def build_app() -> gr.Blocks:
                             preserve_count += 1
 
                     stats_html = f"""
-                    <h3 style="color:#E67E22; margin:1rem 0;">📊 Glossary Statistics</h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin:1rem 0;">
-                        <div style="padding:1rem; background:#2A2A2A; border-radius:8px; border-left:4px solid #C0392B;">
-                            <div style="color:#999; font-size:0.9rem;">Total Terms</div>
-                            <div style="font-size:2rem; font-weight:bold; color:#C0392B;">{len(glossary_data)}</div>
+                    <div class="stats-shell">
+                        <h3 class="content-subheading">Glossary coverage</h3>
+                        <div class="stats-grid">
+                            <div class="stats-card">
+                                <div class="stats-label">Total terms</div>
+                                <div class="stats-value">{len(glossary_data)}</div>
+                            </div>
+                            <div class="stats-card">
+                                <div class="stats-label">Protected terms</div>
+                                <div class="stats-value">{preserve_count}</div>
+                            </div>
+                            <div class="stats-card">
+                                <div class="stats-label">Domains covered</div>
+                                <div class="stats-value">{len(domain_counts)}</div>
+                            </div>
                         </div>
-                        <div style="padding:1rem; background:#2A2A2A; border-radius:8px; border-left:4px solid #E67E22;">
-                            <div style="color:#999; font-size:0.9rem;">Protected Terms 🔒</div>
-                            <div style="font-size:2rem; font-weight:bold; color:#E67E22;">{preserve_count}</div>
-                        </div>
-                        <div style="padding:1rem; background:#2A2A2A; border-radius:8px; border-left:4px solid #27AE60;">
-                            <div style="color:#999; font-size:0.9rem;">Domains Covered</div>
-                            <div style="font-size:2rem; font-weight:bold; color:#27AE60;">{len(domain_counts)}</div>
-                        </div>
-                    </div>
-
-                    <h3 style="color:#E67E22; margin-top:1.5rem; margin-bottom:1rem;">Domain Breakdown</h3>
-                    <ul style="color:#B0B0B0;">
+                        <h3 class="content-subheading">Domain breakdown</h3>
+                        <ul class="stats-list">
                     """
                     for domain, count in sorted(domain_counts.items(), key=lambda x: -x[1]):
                         stats_html += f"<li><strong>{domain.title()}:</strong> {count} terms</li>"
-                    stats_html += "</ul>"
+                    stats_html += "</ul></div>"
                     gr.HTML(stats_html)
 
-            # ─── TAB 5: Laikipiak ───
-            with gr.Tab("⚔️ Laikipiak"):
+            with gr.Tab("Laikipiak"):
+                gr.HTML(
+                    render_section_header(
+                        "Laikipiak",
+                        "Bilingual historical documentation of the Laikipiak section, the Iloikop wars, and their legacy.",
+                        kicker="Historical record",
+                    )
+                )
+                gr.Markdown(LAIKIPIAK_DOC, elem_classes=["laikipiak-doc"])
 
-                gr.HTML("""
-                <div class="laikipiak-doc">
-                    <p style="color:#B0B0B0; font-style:italic;">
-                        Complete bilingual documentation of the Laikipiak section — from their rise as the most 
-                        powerful Maasai iloshon, through the devastating Iloikop Wars, to their legacy today.
-                        Presented in both English and Maa.
-                    </p>
-                </div>
-                """)
-                gr.Markdown(LAIKIPIAK_DOC)
+            with gr.Tab("About"):
+                gr.HTML(
+                    render_section_header(
+                        "About",
+                        "Project context, runtime posture, training footprint, and usage boundaries for the Space.",
+                        kicker="Project context",
+                    )
+                )
 
-            # ─── TAB 7: About & Status ───
-            with gr.Tab("ℹ️ About"):
-                gr.HTML("""
-                <div class="culture-section">
-                    <h2>About This Project</h2>
-                    <p style="color:#B0B0B0;">
-                        The Maasai Language Showcase is a research-grade platform for English ↔ Maasai translation 
-                        and Maasai speech transcription. It is built for language preservation, accessibility, and 
-                        low-resource AI research.
-                    </p>
-                </div>
-                """)
-
-                gr.HTML("<h3 style='color:#E67E22; margin-top:1.5rem;'>🚀 System Status</h3>")
+                gr.HTML("<h3 class='content-subheading'>System status</h3>")
                 gr.HTML(render_runtime_status())
 
                 gr.HTML("""
-                    <h3 style="color:#E67E22;">🏗️ Architecture</h3>
-                    <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
-                        <tr style="border-bottom:1px solid #3A3A3A;">
-                            <td style="padding:0.5rem; color:#E67E22; font-weight:600;">Translation</td>
-                            <td style="padding:0.5rem;">google/gemma-3-4b-it (QLoRA fine-tuned)</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #3A3A3A;">
-                            <td style="padding:0.5rem; color:#E67E22; font-weight:600;">Speech</td>
-                            <td style="padding:0.5rem;">microsoft/paza-whisper-large-v3-turbo</td>
-                        </tr>
-                        <tr style="border-bottom:1px solid #3A3A3A;">
-                            <td style="padding:0.5rem; color:#E67E22; font-weight:600;">Inference</td>
-                            <td style="padding:0.5rem;">llama.cpp (GGUF) via llama-cpp-python</td>
-                        </tr>
-                        <tr>
-                            <td style="padding:0.5rem; color:#E67E22; font-weight:600;">UI</td>
-                            <td style="padding:0.5rem;">Gradio with Maasai cultural theme</td>
-                        </tr>
-                    </table>
-                    
-                    <h3 style="color:#E67E22;">📊 Training Data</h3>
-                    <ul style="color:#B0B0B0;">
-                        <li>7,814 training pairs (85% of 9,194 total)</li>
-                        <li>689 validation pairs (7.5%)</li>
-                        <li>691 test pairs (7.5%)</li>
-                        <li>91.8% gold-tier, 8.2% silver-tier quality</li>
-                        <li>103+ protected cultural terms</li>
-                        <li>14+ Maasai sections/sub-tribes covered</li>
-                        <li>98% confidence threshold for preservation</li>
-                    </ul>
-                    
-                    <h3 style="color:#E67E22;">🌍 Sub-tribes Covered</h3>
-                    <p style="color:#B0B0B0;">
-                        Ldikiri · Laikipiak · Samburu (Lmomonyot) · Ilkisongo · Ilpurko · Ildamat · 
-                        Ilkeekonyokie · Iloodokilani · Ilkaputiei · Ilmatapato · Ilwuasinkishu · 
-                        Isiria · Ilarusa · Ilparakuyo
-                    </p>
-                    
-                    <h3 style="color:#E67E22;">⚠️ Limitations & Caveats</h3>
-                    <ul style="color:#B0B0B0;">
-                        <li><strong>Low-resource language</strong> — Maasai has limited digital resources; quality may vary by domain</li>
-                        <li><strong>Orthography</strong> — Maasai orthography is not fully standardized; outputs may vary</li>
-                        <li><strong>Native review</strong> — Outputs should be reviewed by native Maa speakers</li>
-                        <li><strong>Not for safety-critical use</strong> — Not intended for legal, medical, or safety-critical translation</li>
-                        <li><strong>Synthetic data</strong> — Significant portion of training data is synthetically generated</li>
-                    </ul>
-
-                    <h3 style="color:#E67E22;">📖 Citation</h3>
-                    <p style="color:#B0B0B0; font-family:monospace; background:#1a1a1a; padding:1rem; border-radius:4px; word-break:break-all;">
-                        @dataset{maasai_translation_corpus_2026,<br/>
-                        &nbsp;&nbsp;title={Maasai English Translation Corpus},<br/>
-                        &nbsp;&nbsp;author={NorthernTribe-Research},<br/>
-                        &nbsp;&nbsp;year={2026},<br/>
-                        &nbsp;&nbsp;publisher={Hugging Face},<br/>
-                        &nbsp;&nbsp;url={https://huggingface.co/datasets/NorthernTribe-Research/maasai-translation-corpus}<br/>
-                        }
-                    </p>
-                    
-                    <h3 style="color:#E67E22;">🤝 Community & Ethics</h3>
-                    <p style="color:#B0B0B0;">
-                        This project is built with respect for the Maasai communities and the Maa language. 
-                        All work is guided by principles of cultural sensitivity, community benefit, and linguistic preservation.
-                    </p>
-
-                    <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid #3A3A3A;">
-                        <p style="color:#888; font-size:0.9rem; text-align:center;">
-                            Built by <strong>NorthernTribe-Research</strong> for the preservation and 
-                            accessibility of the Maasai (Maa) language.<br/>
-                            <em>With respect for the Maasai communities whose language this project serves.</em><br/>
-                            <strong>March 2026</strong>
+                <div class="about-grid">
+                    <div class="about-panel">
+                        <h3>Architecture</h3>
+                        <table class="data-table">
+                            <tr>
+                                <th>Translation</th>
+                                <td>google/gemma-3-4b-it (QLoRA fine-tuned)</td>
+                            </tr>
+                            <tr>
+                                <th>Speech</th>
+                                <td>microsoft/paza-whisper-large-v3-turbo</td>
+                            </tr>
+                            <tr>
+                                <th>Inference</th>
+                                <td>llama.cpp (GGUF) via llama-cpp-python</td>
+                            </tr>
+                            <tr>
+                                <th>Interface</th>
+                                <td>Gradio research workspace</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="about-panel">
+                        <h3>Training data</h3>
+                        <ul class="detail-list">
+                            <li>7,814 training pairs (85% of 9,194 total)</li>
+                            <li>689 validation pairs (7.5%)</li>
+                            <li>691 test pairs (7.5%)</li>
+                            <li>91.8% gold-tier, 8.2% silver-tier quality</li>
+                            <li>103+ protected cultural terms</li>
+                            <li>14+ Maasai sections and sub-groups covered</li>
+                            <li>98% confidence threshold for preservation</li>
+                        </ul>
+                    </div>
+                    <div class="about-panel">
+                        <h3>Sections covered</h3>
+                        <p class="panel-copy">
+                            Ldikiri · Laikipiak · Samburu (Lmomonyot) · Ilkisongo · Ilpurko · Ildamat ·
+                            Ilkeekonyokie · Iloodokilani · Ilkaputiei · Ilmatapato · Ilwuasinkishu ·
+                            Isiria · Ilarusa · Ilparakuyo
                         </p>
                     </div>
+                    <div class="about-panel">
+                        <h3>Limitations</h3>
+                        <ul class="detail-list">
+                            <li><strong>Low-resource language:</strong> output quality can vary by domain and dialectal form.</li>
+                            <li><strong>Orthography:</strong> Maa spelling is not fully standardized, so outputs may vary.</li>
+                            <li><strong>Native review:</strong> material should be reviewed by Maa speakers before formal publication.</li>
+                            <li><strong>Safety boundaries:</strong> the system is not intended for legal, medical, or safety-critical use.</li>
+                            <li><strong>Synthetic data:</strong> a meaningful share of the training set is synthetically generated.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="about-panel">
+                    <h3>Citation</h3>
+                    <div class="citation-block">
+                        @dataset{{maasai_translation_corpus_2026,<br/>
+                        &nbsp;&nbsp;title={{Maasai English Translation Corpus}},<br/>
+                        &nbsp;&nbsp;author={{NorthernTribe-Research}},<br/>
+                        &nbsp;&nbsp;year={{2026}},<br/>
+                        &nbsp;&nbsp;publisher={{Hugging Face}},<br/>
+                        &nbsp;&nbsp;url={{https://huggingface.co/datasets/NorthernTribe-Research/maasai-translation-corpus}}<br/>
+                        }}
+                    </div>
+                </div>
+                <div class="about-panel">
+                    <h3>Community and ethics</h3>
+                    <p class="panel-copy">
+                        This project is built with respect for Maasai communities and the Maa language.
+                        The work is guided by cultural sensitivity, linguistic preservation, and community benefit.
+                    </p>
+                    <p class="closing-note">
+                        Built by <strong>NorthernTribe-Research</strong> for Maa language preservation and access.<br/>
+                        March 2026
+                    </p>
                 </div>
                 """)
 
-        # ===== FOOTER =====
-
         gr.HTML("""
-        <div class="beadwork-stripe"></div>
         <div class="footer-note">
-            <strong>Enkutuk oo lMaa</strong> — The Maasai Language Showcase<br>
-            NorthernTribe-Research · 2026<br>
-            <em>"Meishoo iyiook enkai inkishu o-inkujit"</em> — God gave us cattle and grass
+            <strong>Enkutuk oo lMaa</strong> · Maasai Language Showcase · NorthernTribe-Research
         </div>
         """)
 

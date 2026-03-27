@@ -1,8 +1,7 @@
 ---
 title: Maasai Language Showcase
-emoji: 🛡️
-colorFrom: red
-colorTo: yellow
+colorFrom: gray
+colorTo: red
 sdk: gradio
 sdk_version: 5.23.0
 app_file: app.py

@@ -3,10 +3,13 @@ language:
   - en
   - mas
 library_name: transformers
+pipeline_tag: translation
+base_model: google/gemma-3-4b-it
 license: apache-2.0
 tags:
   - translation
   - maasai
+  - maa
   - low-resource
   - qlora
   - cultural-preservation
@@ -15,7 +18,7 @@ datasets:
 ---
 # Maasai-English Translation Model
 
-English↔Maasai translation model intended for low-resource MT and language-preservation workflows.
+English↔Maasai translation model for low-resource machine translation and language-preservation workflows.
 
 ## Model Details
 
@@ -54,6 +57,12 @@ The raw published dataset stores parallel pairs and metadata. The trainer constr
 - The corpus is strongest in Bible-aligned and cultural content.
 - Orthographic and dialectal variation are not fully normalized.
 - Native Maa speaker review remains necessary for formal or sensitive use.
+
+## Hub Download Metrics
+
+This repository publishes a lightweight `meta.yaml` file alongside the model card. The file is metadata only and is not a loadable checkpoint. It exists so scaffold releases and early repo states still expose a stable Hub metadata artifact that can act as a download-count anchor before full model weights are uploaded.
+
+When adapter or merged model files are published, the real model artifacts remain the primary release assets. The metadata file is retained to keep the repo machine-readable and to avoid treating placeholder states as if they were runnable weights.
 
 ## Evaluation
 
