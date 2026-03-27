@@ -71,7 +71,7 @@ jobs:
           echo "HF_MODEL_REPO=$HF_MODEL_REPO" >> "$GITHUB_ENV"
 
           if [ -z "${HF_BASE_MODEL:-}" ]; then
-            echo "HF_BASE_MODEL=google/gemma-3-4b-it" >> "$GITHUB_ENV"
+            echo "HF_BASE_MODEL=Qwen/Qwen2.5-3B-Instruct" >> "$GITHUB_ENV"
           fi
 
       - name: Configure runner work directory
@@ -97,6 +97,7 @@ jobs:
             --dataset-repo "$HF_DATASET_REPO" \
             --model-repo "$HF_MODEL_REPO" \
             --work-dir "$HF_DAILY_WORKDIR" \
+            --require-4bit \
             --max-steps "$MAX_STEPS" \
             --save-steps "$SAVE_STEPS" \
             --eval-steps "$SAVE_STEPS" \

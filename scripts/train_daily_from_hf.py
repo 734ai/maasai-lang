@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=os.getenv("HF_MODEL_REPO", "NorthernTribe-Research/maasai-en-mt"),
     )
-    parser.add_argument("--model-name", type=str, default=os.getenv("HF_BASE_MODEL", "google/gemma-3-4b-it"))
+    parser.add_argument("--model-name", type=str, default=os.getenv("HF_BASE_MODEL", "Qwen/Qwen2.5-3B-Instruct"))
     parser.add_argument("--work-dir", type=str, default=os.getenv("HF_DAILY_WORKDIR", "/tmp/maasai-daily-hf"))
     parser.add_argument("--token", type=str, default=None)
     parser.add_argument("--private-model-repo", action="store_true")
@@ -56,6 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
+    parser.add_argument("--require-4bit", action="store_true")
     parser.add_argument("--report-to", type=str, default="none")
     parser.add_argument("--hub-strategy", type=str, default="checkpoint")
     parser.add_argument("--story-seed-file", type=str, default="data/raw/maasai_story_generation_seed.jsonl")
@@ -110,13 +111,14 @@ def maybe_get_local_wandb_key(project_root: Path) -> str | None:
 def resolve_token(args: argparse.Namespace) -> str:
     if args.token:
         return args.token
-    for env_var in ("HF_TOKEN", "HUGGINGFACE_TOKEN"):
+    for env_var in ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HF_API_KEY"):
         value = os.getenv(env_var)
         if value:
             return value
-    secret_value = maybe_get_colab_secret("HF_TOKEN")
-    if secret_value:
-        return secret_value
+    for secret_name in ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HF_API_KEY"):
+        secret_value = maybe_get_colab_secret(secret_name)
+        if secret_value:
+            return secret_value
     raise RuntimeError("No HF token found. Set HF_TOKEN or pass --token.")
 
 
@@ -158,6 +160,7 @@ def write_run_manifest(
         "save_steps": args.save_steps,
         "eval_steps": args.eval_steps,
         "report_to": args.report_to,
+        "require_4bit": args.require_4bit,
         "hub_strategy": args.hub_strategy,
         "augment_with_generation_tasks": args.augment_with_generation_tasks,
         "story_seed_file": args.story_seed_file,
@@ -226,7 +229,8 @@ def restore_latest_checkpoint(repo_id: str, token: str, output_dir: Path) -> str
             ],
             ignore_patterns=["*.gguf"],
         )
-    except Exception:
+    except Exception as exc:
+        print(f"Checkpoint restore skipped: {exc}", file=sys.stderr)
         return None
 
     checkpoints = sorted(
@@ -293,6 +297,7 @@ def build_train_command(
         str(args.lora_alpha),
         "--lora_dropout",
         str(args.lora_dropout),
+        "--require_4bit" if args.require_4bit else "",
         "--push_to_hub",
         "--hub_model_id",
         args.model_repo,
@@ -313,7 +318,7 @@ def build_train_command(
         cmd.append("--hub_private_repo")
     if resume_checkpoint:
         cmd.extend(["--resume_from_checkpoint", resume_checkpoint])
-    return cmd
+    return [part for part in cmd if part]
 
 
 def maybe_disconnect_colab() -> None:

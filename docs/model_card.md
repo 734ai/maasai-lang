@@ -4,7 +4,7 @@ language:
   - mas
 library_name: transformers
 pipeline_tag: translation
-base_model: google/gemma-3-4b-it
+base_model: Qwen/Qwen2.5-3B-Instruct
 license: apache-2.0
 tags:
   - translation
@@ -35,7 +35,7 @@ The training recipe in this repo uses the public parallel corpus from `data/fina
 - 9,406 total pairs
 - 7,991 train / 707 valid / 708 test
 - 4,703 en→mas and 4,703 mas→en
-- 8,444 gold-tier and 962 silver-tier examples
+- 9,124 gold-tier and 282 silver-tier examples
 
 This release now includes a small open-source supplement layer from public-domain Hollis proverbs and the CC BY 4.0 ASJP Maasai wordlist, in addition to the existing Bible-aligned and curated cultural data.
 

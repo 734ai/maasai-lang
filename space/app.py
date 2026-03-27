@@ -55,6 +55,7 @@ OPERATIONAL_MESSAGE_PREFIXES = (
     MODEL_UNAVAILABLE_PREFIX,
     ASR_UNAVAILABLE_PREFIX,
 )
+RESPONSE_MARKER = "### Response:"
 
 COMPOSITION_LENGTH_GUIDANCE = {
     "Compact": {
@@ -211,16 +212,17 @@ def load_research_snapshot() -> dict[str, Any]:
 
     fallback_snapshot = {
         "dataset": {
-            "total_pairs": 9194,
-            "train_pairs": 7814,
-            "valid_pairs": 689,
-            "test_pairs": 691,
-            "balanced_directions": "4,597 en→mas / 4,597 mas→en",
+            "total_pairs": 9406,
+            "train_pairs": 7991,
+            "valid_pairs": 707,
+            "test_pairs": 708,
+            "balanced_directions": "4,703 en→mas / 4,703 mas→en",
             "top_domains": [
                 {"domain": "bible", "count": 8444},
+                {"domain": "proverbs", "count": 158},
                 {"domain": "philosophy", "count": 100},
                 {"domain": "culture", "count": 84},
-                {"domain": "environment", "count": 64},
+                {"domain": "lexicon", "count": 80},
             ],
         },
         "glossary": {
@@ -579,19 +581,9 @@ def find_glossary_matches(text: str, direction: str, limit: int = 6) -> list[dic
 def build_inference_prompt(text: str, direction: str, glossary_matches: list[dict[str, Any]]) -> str:
     """Build a translation prompt with glossary guidance when matches are present."""
     if direction == "English → Maasai":
-        header = (
-            "You are an expert English-to-Maasai translator. Translate the English text into natural "
-            "Maa. Preserve cultural terms faithfully and do not flatten protected terminology."
-        )
-        input_label = "English"
-        output_label = "Maasai"
+        base_prompt = f'Translate the following English sentence to Maasai:\n"{text.strip()}"'
     else:
-        header = (
-            "You are an expert Maasai-to-English translator. Translate the Maa text into clear English "
-            "while preserving important cultural meaning and named terms where appropriate."
-        )
-        input_label = "Maasai"
-        output_label = "English"
+        base_prompt = f'Translate the following Maasai sentence to English:\n"{text.strip()}"'
 
     glossary_section = ""
     if glossary_matches:
@@ -603,12 +595,12 @@ def build_inference_prompt(text: str, direction: str, glossary_matches: list[dic
                 f"[domain: {entry.get('domain', 'general')}]"
             )
         glossary_section = (
-            "\n\nGlossary guidance:\n"
+            "Glossary guidance:\n"
             + "\n".join(guidance_lines)
-            + "\nUse these mappings faithfully. Preserve protected Maa terms exactly when appropriate."
+            + "\nUse these mappings faithfully. Preserve protected Maa terms exactly when appropriate.\n\n"
         )
 
-    return f"{header}{glossary_section}\n\n{input_label}: {text}\n{output_label}:"
+    return f"{glossary_section}{base_prompt}\n\n{RESPONSE_MARKER}\n"
 
 
 def render_glossary_matches(glossary_matches: list[dict[str, Any]], direction: str) -> str:
@@ -732,38 +724,44 @@ def build_composition_prompt(
         )
 
     prompt = (
-        "You are a Maasai language writing assistant.\n"
+        f"Task type: {composition_type}\n"
+        f"Register guidance: {register_guidance}\n"
+        f"Length guidance: {task_instruction}\n"
+        f"Mode guidance: {mode_guidance}\n"
         "Write original Maa only.\n"
         "Do not answer in English.\n"
-        "Do not explain the task.\n"
-        "Do not use bullet points or headings.\n"
-        f"Register guidance: {register_guidance}\n"
-        f"Task type: {composition_type}\n"
-        f"Length guidance: {task_instruction}\n"
-        f"Mode guidance: {mode_guidance}\n\n"
+        "Do not use bullets or headings.\n\n"
         f"{glossary_section}"
         f"{required_term_section}"
         f"Theme or context:\n{theme.strip()}\n\n"
-        "Maa:"
+        f"{RESPONSE_MARKER}\n"
     )
     return prompt, int(length_profile["max_new_tokens"])
 
 
+def clean_generated_output(text: str) -> str:
+    """Normalize raw model continuations for both translation and composition."""
+    cleaned = text.strip().strip('"').strip("'")
+    if RESPONSE_MARKER in cleaned:
+        cleaned = cleaned.split(RESPONSE_MARKER, 1)[1].strip()
+
+    for marker in ("\nEnglish:", "\nMaasai:", "\nTranslation:", "\nExplanation:", "\nNotes:"):
+        if marker in cleaned:
+            cleaned = cleaned.split(marker, 1)[0].strip()
+
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
 def clean_composition_output(text: str) -> str:
     """Remove common instruction labels from generated composition text."""
-    cleaned = text.strip().strip('"').strip("'")
+    cleaned = clean_generated_output(text)
     cleaned = re.sub(
         r"^(Maa|Maasai|Response|Output|Story|Devotional Reflection|Sentence Composition)\s*:\s*",
         "",
         cleaned,
         flags=re.IGNORECASE,
     )
-
-    for marker in ("\nEnglish:", "\nTranslation:", "\nExplanation:", "\nNotes:"):
-        if marker in cleaned:
-            cleaned = cleaned.split(marker, 1)[0].strip()
-
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
     return cleaned
 
 
@@ -1020,9 +1018,15 @@ def translate_text(
     prompt = build_inference_prompt(text, direction, glossary_matches)
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(**inputs, max_new_tokens=256, temperature=0.3, do_sample=True)
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=256,
+        do_sample=False,
+        repetition_penalty=1.02,
+        pad_token_id=tokenizer.eos_token_id or tokenizer.pad_token_id,
+    )
     result = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-    return result.strip()
+    return clean_generated_output(result) or result.strip()
 
 
 def translate_with_context(text: str, direction: str) -> tuple[str, str, str, str]:
@@ -2118,7 +2122,7 @@ def build_app() -> gr.Blocks:
                         <table class="data-table">
                             <tr>
                                 <th>Translation</th>
-                                <td>google/gemma-3-4b-it (QLoRA fine-tuned)</td>
+                                <td>NorthernTribe-Research/maasai-en-mt (QLoRA on Qwen2.5-3B-Instruct)</td>
                             </tr>
                             <tr>
                                 <th>Speech</th>
@@ -2126,7 +2130,7 @@ def build_app() -> gr.Blocks:
                             </tr>
                             <tr>
                                 <th>Inference</th>
-                                <td>llama.cpp (GGUF) via llama-cpp-python</td>
+                                <td>Transformers causal LM with lazy runtime loading</td>
                             </tr>
                             <tr>
                                 <th>Interface</th>
@@ -2137,10 +2141,10 @@ def build_app() -> gr.Blocks:
                     <div class="about-panel">
                         <h3>Training data</h3>
                         <ul class="detail-list">
-                            <li>7,814 training pairs (85% of 9,194 total)</li>
-                            <li>689 validation pairs (7.5%)</li>
-                            <li>691 test pairs (7.5%)</li>
-                            <li>91.8% gold-tier, 8.2% silver-tier quality</li>
+                            <li>7,991 training pairs (85% of 9,406 total)</li>
+                            <li>707 validation pairs (7.5%)</li>
+                            <li>708 test pairs (7.5%)</li>
+                            <li>97.0% gold-tier, 3.0% silver-tier quality</li>
                             <li>103+ protected cultural terms</li>
                             <li>14+ Maasai sections and sub-groups covered</li>
                             <li>98% confidence threshold for preservation</li>

@@ -8,7 +8,7 @@ organization: NorthernTribe-Research
 dataset: NorthernTribe-Research/maasai-translation-corpus
 space: NorthernTribe-Research/maasai-language-showcase
 training_method: qlora
-base_model_family: gemma
+base_model_family: qwen
 publication:
   artifact_status: scaffold
   contains_weights: false

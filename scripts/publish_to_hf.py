@@ -257,7 +257,7 @@ def build_model_download_meta(model_artifacts: dict) -> str:
     lines = [
         "project: maasai-en-mt",
         "task: translation",
-        "base_model: google/gemma-3-4b-it",
+        "base_model: Qwen/Qwen2.5-3B-Instruct",
         "training_recipe: qlora",
         f"publication_status: {publication_status}",
         "download_count_anchor: true",

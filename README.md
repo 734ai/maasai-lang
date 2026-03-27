@@ -18,7 +18,7 @@ A modern English ↔ Maasai translation and Maasai speech transcription showcase
 
 | Component | Model | Purpose |
 |-----------|-------|---------|
-| Translation | `google/gemma-3-4b-it` (QLoRA) | English ↔ Maasai text translation |
+| Translation | `Qwen/Qwen2.5-3B-Instruct` (QLoRA) | English ↔ Maasai text translation and Maa composition |
 | Speech | `microsoft/paza-whisper-large-v3-turbo` | Maasai speech transcription |
 | UI | Gradio | Interactive Hugging Face Space |
 
@@ -62,7 +62,7 @@ python scripts/publish_to_hf.py --execute --create-model-repo
 
 The publisher uploads:
 - Space bundle from `space/` + glossary data
-- Dataset bundle from `data/processed/` + dataset card
+- Dataset bundle from `data/final_v3/` + dataset card
 - Model artifacts from `outputs/maasai-en-mt-qlora` when real weights exist
 - A model repo scaffold with `README.md`, `meta.yaml`, and status metadata when local outputs are still mock placeholders
 
@@ -82,6 +82,7 @@ python scripts/train_daily_from_hf.py \
 ```
 
 - `scripts/train_daily_from_hf.py` downloads the dataset from HF, restores the latest checkpoint from the model repo, and pushes new checkpoints back with `hub_strategy="checkpoint"`.
+- The default open base model is `Qwen/Qwen2.5-3B-Instruct` so Kaggle and other GPU runners are not blocked on gated-model access.
 - `.github/workflows/daily-train.yml` schedules the same flow for a `self-hosted` GPU runner, reads `HF_DATASET_REPO` / `HF_MODEL_REPO` from GitHub repo variables when set, and uploads a per-run manifest artifact from the runner temp directory.
 - For the future `734ai` GitHub repo, GitHub becomes the control plane while Hugging Face stays the durable checkpoint backend.
 

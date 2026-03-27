@@ -20,8 +20,7 @@ from pathlib import Path
 WORK_ROOT = Path("/kaggle/working")
 PROJECT_ROOT = WORK_ROOT / "maasai-lang"
 RUNTIME_CONFIG_JSON = """__RUNTIME_CONFIG_JSON__"""
-TRAINING_REQUIREMENTS = [
-    "torch>=2.3.0",
+CORE_TRAINING_REQUIREMENTS = [
     "transformers>=4.51.0",
     "datasets>=3.0.0",
     "accelerate>=1.0.0",
@@ -33,7 +32,6 @@ TRAINING_REQUIREMENTS = [
     "evaluate>=0.4.3",
     "pyyaml>=6.0.2",
     "huggingface_hub>=0.30.0",
-    "wandb>=0.19.0",
 ]
 
 
@@ -65,8 +63,16 @@ def get_first_available_secret(*names: str) -> str | None:
     return None
 
 
-def install_dependencies() -> None:
-    run([sys.executable, "-m", "pip", "install", "-q", *TRAINING_REQUIREMENTS])
+def install_dependencies(config: dict) -> None:
+    requirements = list(CORE_TRAINING_REQUIREMENTS)
+    if config.get("report_to") == "wandb":
+        requirements.append("wandb>=0.19.0")
+    try:
+        import torch  # noqa: F401
+    except Exception:
+        requirements.append("torch>=2.3.0")
+
+    run([sys.executable, "-m", "pip", "install", "-q", "--upgrade", *requirements])
 
 
 def clone_repo(config: dict) -> None:
@@ -98,7 +104,7 @@ def main() -> int:
     os.environ.setdefault("TRANSFORMERS_CACHE", "/kaggle/working/.cache/huggingface/transformers")
     os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
-    install_dependencies()
+    install_dependencies(config)
     clone_repo(config)
 
     cmd = [
@@ -147,6 +153,8 @@ def main() -> int:
         "--report-to",
         config["report_to"],
     ]
+    if config.get("require_4bit"):
+        cmd.append("--require-4bit")
 
     if config.get("augment_with_generation_tasks", True):
         cmd.append("--augment-with-generation-tasks")

@@ -24,7 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--project-branch", default="main")
     parser.add_argument("--dataset-repo", default="NorthernTribe-Research/maasai-translation-corpus")
     parser.add_argument("--model-repo", default="NorthernTribe-Research/maasai-en-mt")
-    parser.add_argument("--base-model", default="google/gemma-3-4b-it")
+    parser.add_argument("--base-model", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--work-dir", default="/kaggle/working/maasai-daily-hf")
     parser.add_argument("--max-length", type=int, default=768)
     parser.add_argument("--learning-rate", type=float, default=2e-4)
@@ -34,9 +34,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-steps", type=int, default=100)
     parser.add_argument("--logging-steps", type=int, default=20)
     parser.add_argument("--save-total-limit", type=int, default=3)
-    parser.add_argument("--per-device-train-batch-size", type=int, default=2)
-    parser.add_argument("--per-device-eval-batch-size", type=int, default=2)
-    parser.add_argument("--gradient-accumulation-steps", type=int, default=16)
+    parser.add_argument("--per-device-train-batch-size", type=int, default=1)
+    parser.add_argument("--per-device-eval-batch-size", type=int, default=1)
+    parser.add_argument("--gradient-accumulation-steps", type=int, default=32)
     parser.add_argument("--warmup-ratio", type=float, default=0.03)
     parser.add_argument("--weight-decay", type=float, default=0.01)
     parser.add_argument("--lora-r", type=int, default=16)
@@ -47,6 +47,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-bible-passages", type=int, default=48)
     parser.add_argument("--bible-passage-window", type=int, default=3)
     parser.add_argument("--private-model-repo", action="store_true")
+    parser.add_argument(
+        "--require-4bit",
+        action="store_true",
+        help="Require 4-bit quantization in the Kaggle runtime instead of allowing fallback loads",
+    )
     parser.add_argument(
         "--embed-local-hf-token",
         action="store_true",
@@ -146,6 +151,7 @@ def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
         "private_model_repo": args.private_model_repo,
         "wandb_api_key": wandb_api_key,
         "hf_token": hf_token,
+        "require_4bit": args.require_4bit,
     }
 
 

@@ -34,7 +34,7 @@ What happens:
 
 The repo now includes [`.github/workflows/daily-train.yml`](/home/ntr/Documents/dev/maasai-lang/.github/workflows/daily-train.yml).
 
-It is designed for a `self-hosted` GPU runner because GitHub-hosted runners do not provide the GPU resources needed for daily QLoRA training on Gemma-class models.
+It is designed for a `self-hosted` GPU runner because GitHub-hosted runners do not provide the GPU resources needed for daily QLoRA training on Qwen 2.5 3B-class models.
 
 Required GitHub secrets:
 
@@ -47,7 +47,7 @@ Recommended GitHub repo variables:
 - `HF_MODEL_REPO`
 - `HF_BASE_MODEL`
 
-The workflow falls back to the current NorthernTribe Hugging Face repos when those vars are not set.
+The workflow falls back to the current NorthernTribe Hugging Face repos when those vars are not set, and defaults the base model to `Qwen/Qwen2.5-3B-Instruct`.
 
 ## Checkpoint Policy
 

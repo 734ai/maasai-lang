@@ -66,15 +66,15 @@ Total pairs: 9,406
 └── Test split:  708 pairs (7.5%)
 
 Quality tiers:
-├── Gold (authenticated, high-confidence): 8,444 pairs (91.8%)
-└── Silver (manually authored, knowledge-driven, or open-source supplement): 962 pairs (10.2%)
+├── Gold (authenticated, high-confidence): 9,124 pairs (97.0%)
+└── Silver (manually authored, knowledge-driven, or open-source supplement): 282 pairs (3.0%)
 
 Language coverage:
 ├── English → Maasai: 4,703 pairs
 └── Maasai → English: 4,703 pairs
 
 Top domains:
-├── Religious & Spiritual: 8,444 pairs (91.8%)
+├── Religious & Spiritual: 8,444 pairs (89.8%)
 ├── Proverbs: 158 pairs
 ├── Philosophy: 100 pairs
 ├── Culture: 84 pairs  

@@ -1,14 +1,18 @@
 {
   "dataset": {
-    "total_pairs": 9194,
-    "train_pairs": 7814,
-    "valid_pairs": 689,
-    "test_pairs": 691,
-    "balanced_directions": "4,597 en→mas / 4,597 mas→en",
+    "total_pairs": 9406,
+    "train_pairs": 7991,
+    "valid_pairs": 707,
+    "test_pairs": 708,
+    "balanced_directions": "4,703 en→mas / 4,703 mas→en",
     "top_domains": [
       {
         "domain": "bible",
         "count": 8444
+      },
+      {
+        "domain": "proverbs",
+        "count": 158
       },
       {
         "domain": "philosophy",
@@ -19,8 +23,8 @@
         "count": 84
       },
       {
-        "domain": "environment",
-        "count": 64
+        "domain": "lexicon",
+        "count": 80
       },
       {
         "domain": "education",

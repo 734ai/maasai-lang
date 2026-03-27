@@ -27,7 +27,7 @@ OUTPUT_DIR = PROJECT_ROOT / "outputs"
 # ---------------------------------------------------------------------------
 # Model IDs
 # ---------------------------------------------------------------------------
-TRANSLATION_BASE_MODEL = "google/gemma-3-4b-it"
+TRANSLATION_BASE_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 TRANSLATION_MODEL_ID = os.getenv("TRANSLATION_MODEL_ID", "NorthernTribe-Research/maasai-en-mt")
 ASR_MODEL_ID = os.getenv("ASR_MODEL_ID", "microsoft/paza-whisper-large-v3-turbo")
 

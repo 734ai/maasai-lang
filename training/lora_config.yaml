@@ -1,8 +1,8 @@
 # LoRA Configuration for Maasai-English Translation
-# Base model: google/gemma-3-4b-it
+# Base model: Qwen/Qwen2.5-3B-Instruct
 
 model:
-  name: "google/gemma-3-4b-it"
+  name: "Qwen/Qwen2.5-3B-Instruct"
   quantization: "4bit"
   bnb_4bit_compute_dtype: "bfloat16"
   bnb_4bit_quant_type: "nf4"
@@ -41,6 +41,6 @@ training:
   seed: 42
 
 data:
-  train_file: "data/processed/train.jsonl"
-  valid_file: "data/processed/valid.jsonl"
+  train_file: "data/final_v3/train.jsonl"
+  valid_file: "data/final_v3/valid.jsonl"
   output_dir: "outputs/maasai-en-mt-qlora"

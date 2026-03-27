@@ -3,8 +3,8 @@
 QLoRA fine-tuning script for English <-> Maasai translation.
 
 Expected input:
-- data/processed/train.jsonl
-- data/processed/valid.jsonl
+- data/final_v3/train.jsonl
+- data/final_v3/valid.jsonl
 """
 
 from __future__ import annotations
@@ -51,9 +51,9 @@ def setup_logging() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name", type=str, default="google/gemma-3-4b-it")
-    parser.add_argument("--train_file", type=str, default="data/processed/train.jsonl")
-    parser.add_argument("--valid_file", type=str, default="data/processed/valid.jsonl")
+    parser.add_argument("--model_name", type=str, default="Qwen/Qwen2.5-3B-Instruct")
+    parser.add_argument("--train_file", type=str, default="data/final_v3/train.jsonl")
+    parser.add_argument("--valid_file", type=str, default="data/final_v3/valid.jsonl")
     parser.add_argument("--output_dir", type=str, default="outputs/maasai-en-mt-qlora")
     parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--learning_rate", type=float, default=2e-4)
@@ -86,6 +86,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--resume_from_checkpoint", type=str, default=None)
     parser.add_argument("--report_to", type=str, default="none")
+    parser.add_argument("--require_4bit", action="store_true")
     parser.add_argument("--augment_with_generation_tasks", action="store_true")
     parser.add_argument("--story_seed_file", type=str, default="data/raw/maasai_story_generation_seed.jsonl")
     parser.add_argument("--max_bible_passages", type=int, default=48)
@@ -226,14 +227,29 @@ def maybe_limit_split(dataset, split_name: str, max_samples: int | None):
     return dataset
 
 
+def preferred_torch_dtype() -> torch.dtype:
+    if not torch.cuda.is_available():
+        return torch.float32
+
+    is_bf16_supported = getattr(torch.cuda, "is_bf16_supported", None)
+    if callable(is_bf16_supported) and is_bf16_supported():
+        return torch.bfloat16
+    return torch.float16
+
+
 def load_model(args: argparse.Namespace):
-    dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+    dtype = preferred_torch_dtype()
     model_kwargs = {
         "torch_dtype": dtype,
         "trust_remote_code": True,
         "local_files_only": args.local_files_only,
     }
     use_4bit = torch.cuda.is_available() and BitsAndBytesConfig is not None
+
+    if args.require_4bit and not torch.cuda.is_available():
+        raise RuntimeError("--require_4bit requires a CUDA runtime.")
+    if args.require_4bit and BitsAndBytesConfig is None:
+        raise RuntimeError("4-bit loading requested, but BitsAndBytesConfig is unavailable in this transformers build.")
 
     if use_4bit:
         LOGGER.info("Loading 4-bit base model")
@@ -254,8 +270,12 @@ def load_model(args: argparse.Namespace):
             model = prepare_model_for_kbit_training(model)
             return model
         except Exception as exc:  # pragma: no cover - depends on local runtime
+            if args.require_4bit:
+                raise RuntimeError(f"4-bit model load failed: {exc}") from exc
             LOGGER.warning("4-bit load failed, falling back to standard precision: %s", exc)
     else:
+        if args.require_4bit:
+            raise RuntimeError("4-bit loading requested, but the current runtime cannot satisfy it.")
         LOGGER.info("4-bit quantization unavailable; loading standard-precision base model")
 
     model = AutoModelForCausalLM.from_pretrained(

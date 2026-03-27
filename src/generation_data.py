@@ -47,6 +47,32 @@ def ensure_instruction_record(row: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
+def _word_count(text: str) -> int:
+    return len(re.findall(r"\b\S+\b", text))
+
+
+def _sentence_count(text: str) -> int:
+    return len(re.findall(r"[.!?]+", text))
+
+
+def _is_passage_text(text: str) -> bool:
+    return "\n" in text or _sentence_count(text) >= 2
+
+
+def _generation_shape(source_text: str, target_text: str, domain: str) -> str | None:
+    source_words = _word_count(source_text)
+    target_words = _word_count(target_text)
+    normalized_domain = domain.strip().lower()
+
+    if normalized_domain == "lexicon":
+        return None
+    if source_words <= 2 and target_words <= 2 and normalized_domain != "greetings":
+        return None
+    if _is_passage_text(source_text) or _is_passage_text(target_text):
+        return "passage"
+    return "sentence"
+
+
 def _make_record(
     base: dict[str, Any],
     *,
@@ -81,26 +107,56 @@ def build_sentence_generation_record(row: dict[str, Any]) -> dict[str, Any] | No
         return None
 
     domain = str(row.get("domain", "general")).strip().lower()
+    shape = _generation_shape(source_text, target_text, domain)
+    if shape is None:
+        return None
+
     prompt = f'Write one natural Maa sentence that conveys this meaning:\n"{source_text}"'
     task = "maasai_sentence_generation"
     notes = "Derived Maa sentence-generation instruction from aligned translation data."
 
+    if shape == "passage":
+        prompt = f'Write a short Maa passage that conveys this meaning:\n"{source_text}"'
+        task = "maasai_passage_generation"
+        notes = "Derived Maa passage-generation instruction from aligned translation data."
+
     if domain in {"bible", "religion"}:
-        prompt = f'Write one Maa sentence in a Biblical register that conveys this idea:\n"{source_text}"'
-        task = "maasai_biblical_sentence_generation"
-        notes = "Derived Biblical-register Maa generation instruction from aligned scripture data."
+        if shape == "passage":
+            prompt = f'Write a short Maa devotional passage in a Biblical register about this theme:\n"{source_text}"'
+            task = "maasai_biblical_passage_generation_direct"
+            notes = "Derived Biblical-register Maa passage-generation instruction from aligned scripture data."
+        else:
+            prompt = f'Write one Maa sentence in a Biblical register that conveys this idea:\n"{source_text}"'
+            task = "maasai_biblical_sentence_generation"
+            notes = "Derived Biblical-register Maa generation instruction from aligned scripture data."
     elif domain in {"greetings"}:
-        prompt = f'Compose a short Maa greeting that means:\n"{source_text}"'
-        task = "maasai_greeting_generation"
+        if shape == "passage":
+            prompt = f'Write a short Maa greeting message about this situation:\n"{source_text}"'
+            task = "maasai_greeting_message_generation"
+        else:
+            prompt = f'Compose a short Maa greeting that means:\n"{source_text}"'
+            task = "maasai_greeting_generation"
     elif domain in {"proverbs", "philosophy"}:
-        prompt = f'Express this lesson as one natural Maa sentence:\n"{source_text}"'
-        task = "maasai_wisdom_generation"
+        if shape == "passage":
+            prompt = f'Write a short Maa reflection that expresses this lesson:\n"{source_text}"'
+            task = "maasai_reflection_generation"
+        else:
+            prompt = f'Express this lesson as one natural Maa sentence:\n"{source_text}"'
+            task = "maasai_wisdom_generation"
     elif domain in {"culture", "ceremony", "education", "governance", "kinship"}:
-        prompt = f'Write one culturally grounded Maa sentence about this idea:\n"{source_text}"'
-        task = "maasai_cultural_generation"
+        if shape == "passage":
+            prompt = f'Write a short culturally grounded Maa passage about this theme:\n"{source_text}"'
+            task = "maasai_cultural_passage_generation"
+        else:
+            prompt = f'Write one culturally grounded Maa sentence about this idea:\n"{source_text}"'
+            task = "maasai_cultural_generation"
     elif domain in {"environment", "livestock", "daily_life", "health"}:
-        prompt = f'Write one natural Maa sentence about this situation:\n"{source_text}"'
-        task = "maasai_descriptive_generation"
+        if shape == "passage":
+            prompt = f'Write a short Maa passage about this situation:\n"{source_text}"'
+            task = "maasai_descriptive_passage_generation"
+        else:
+            prompt = f'Write one natural Maa sentence about this situation:\n"{source_text}"'
+            task = "maasai_descriptive_generation"
 
     return _make_record(
         row,
@@ -157,7 +213,8 @@ def build_bible_passage_records(
                 base,
                 task="maasai_biblical_passage_generation",
                 prompt=(
-                    "Write a short Maa devotional passage in a Biblical register using all of these ideas:\n"
+                    "Render these related Biblical ideas in Maa as one connected short devotional passage.\n"
+                    "Preserve their order and keep a Biblical register:\n"
                     f"{prompt_lines}"
                 ),
                 completion=completion,
@@ -243,6 +300,20 @@ def load_story_seed_records(path: Path, split_name: str) -> list[dict[str, Any]]
     return records
 
 
+def repeat_records(records: list[dict[str, Any]], factor: int) -> list[dict[str, Any]]:
+    if factor <= 1:
+        return [dict(record) for record in records]
+
+    repeated: list[dict[str, Any]] = []
+    for copy_idx in range(factor):
+        for record in records:
+            clone = dict(record)
+            if copy_idx:
+                clone["notes"] = f"{clone.get('notes', '')} Repeated for generation weighting.".strip()
+            repeated.append(clone)
+    return repeated
+
+
 def build_instruction_mixture(
     rows: list[dict[str, Any]],
     split_name: str,
@@ -270,7 +341,9 @@ def build_instruction_mixture(
     )
 
     if story_seed_file is not None:
-        mixture.extend(load_story_seed_records(story_seed_file, split_name))
+        story_records = load_story_seed_records(story_seed_file, split_name)
+        story_repeat_factor = 16 if split_name == "train" else 8
+        mixture.extend(repeat_records(story_records, story_repeat_factor))
 
     rng = random.Random(seed + (0 if split_name == "train" else 10_000))
     rng.shuffle(mixture)

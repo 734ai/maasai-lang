@@ -43,6 +43,9 @@ training*.log
 !data/final_v3/*.jsonl
 !data/glossary/
 !data/glossary/*.json
+!data/raw/
+data/raw/*
+!data/raw/maasai_story_generation_seed.jsonl
 
 # Notebooks
 .ipynb_checkpoints/
