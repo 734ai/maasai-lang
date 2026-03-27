@@ -64,7 +64,9 @@ The publisher uploads:
 - Space bundle from `space/` + glossary data
 - Dataset bundle from `data/processed/` + dataset card
 - Model artifacts from `outputs/maasai-en-mt-qlora` when real weights exist
-- A model repo scaffold with `README.md` only when local outputs are still mock placeholders
+- A model repo scaffold with `README.md`, `meta.yaml`, and status metadata when local outputs are still mock placeholders
+
+Legacy helpers such as `scripts/push_hf_model.py` and `scripts/push_trained_model.py` now route through the same publisher so model cards and Hub metadata stay consistent.
 
 ## Daily Training Automation
 
