@@ -32,7 +32,6 @@ jobs:
       HF_DATASET_REPO: ${{ vars.HF_DATASET_REPO }}
       HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}
       HF_BASE_MODEL: ${{ vars.HF_BASE_MODEL }}
-      HF_DAILY_WORKDIR: ${{ runner.temp }}/maasai-daily-hf
       DEFAULT_MAX_STEPS: "800"
       DEFAULT_SAVE_STEPS: "100"
 
@@ -74,6 +73,11 @@ jobs:
           if [ -z "${HF_BASE_MODEL:-}" ]; then
             echo "HF_BASE_MODEL=google/gemma-3-4b-it" >> "$GITHUB_ENV"
           fi
+
+      - name: Configure runner work directory
+        run: |
+          echo "HF_DAILY_WORKDIR=${RUNNER_TEMP}/maasai-daily-hf" >> "$GITHUB_ENV"
+          mkdir -p "${RUNNER_TEMP}/maasai-daily-hf"
 
       - name: Run resumable daily training
         run: |
