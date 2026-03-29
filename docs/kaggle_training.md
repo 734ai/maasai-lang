@@ -28,12 +28,14 @@ That means the Kaggle run:
 
 ## Required Secrets
 
-There are two different secret systems involved.
+There are three different secret delivery modes available.
 
 ### Local machine
 
 Use root-level `kaggle.json` for the Kaggle API on your machine.
 This is used only to push/update the Kaggle kernel from local development.
+
+You can also use `KAGGLE_USERNAME` and `KAGGLE_KEY` environment variables instead of `kaggle.json`.
 
 ### Kaggle runtime
 
@@ -48,6 +50,20 @@ Optional:
 If you push the kernel with `--report-to wandb` and a local root-level `wandb-keys.json`
 exists, the helper will embed that W&B key into the Kaggle kernel package.
 That is local-only behavior and the file remains gitignored.
+
+### GitHub Actions
+
+The GitHub workflow can also embed secrets directly into the private kernel package from environment variables.
+
+Required GitHub secrets:
+
+- `KAGGLE_USERNAME`
+- `KAGGLE_KEY`
+- `HF_TOKEN`
+
+Optional:
+
+- `WANDB_API_KEY`
 
 `HF_TOKEN` must have access to the base model if it is gated and must have permission to push to:
 
@@ -82,6 +98,20 @@ KAGGLE_CONFIG_DIR="$PWD" .venv/bin/python scripts/run_kaggle_training.py \
   --embed-local-hf-token
 ```
 
+## GitHub Actions Flow
+
+The scheduled GitHub workflow now calls `scripts/run_kaggle_training.py` on `ubuntu-latest`.
+
+That workflow:
+
+- authenticates to Kaggle with `KAGGLE_USERNAME` and `KAGGLE_KEY`
+- passes the current GitHub repository and branch into the kernel config
+- embeds `HF_TOKEN` into the private kernel package with `--embed-env-hf-token`
+- optionally embeds `WANDB_API_KEY`
+- pushes the kernel and waits until Kaggle reaches real training startup
+
+This makes GitHub the control plane while Kaggle remains the GPU execution backend.
+
 ## Default Kernel Target
 
 By default the helper creates:
@@ -106,7 +136,7 @@ Example:
 ## Runtime Notes
 
 - Kaggle GPU sessions are time-limited, so the HF checkpoint resume path matters.
-- The kernel uses the existing `--augment-with-generation-tasks` default.
+- The default kernel profile is translation-only and passes `--no-augment-with-generation-tasks` unless you override it.
 - The default base model is `Qwen/Qwen2.5-3B-Instruct` so the Kaggle runtime is not blocked on gated-model approval.
 - The default kernel profile now uses `batch_size=1` and `gradient_accumulation_steps=32`, and it does not require 4-bit unless you explicitly push with `--require-4bit`.
 - If Kaggle assigns a Tesla P100 / Pascal GPU, the current PyTorch build may not support that architecture. The trainer now fails early with an explicit rerun-on-T4/L4 message instead of crashing deep in model load.

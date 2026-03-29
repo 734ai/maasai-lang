@@ -3,7 +3,8 @@
 This project now supports a resumable Hugging Face training loop driven from either:
 
 - Google Colab with secrets stored in the Colab key vault
-- A GitHub Actions schedule running on a self-hosted GPU runner
+- GitHub Actions dispatching Kaggle GPU training
+- A manual GitHub Actions fallback that runs directly on a self-hosted GPU runner
 
 ## Colab Flow
 
@@ -34,10 +35,20 @@ What happens:
 
 The repo now includes [`.github/workflows/daily-train.yml`](/home/ntr/Documents/dev/maasai-lang/.github/workflows/daily-train.yml).
 
-It is designed for a `self-hosted` GPU runner because GitHub-hosted runners do not provide the GPU resources needed for daily QLoRA training on Qwen 2.5 3B-class models.
+Scheduled GitHub runs now use `ubuntu-latest` only as the control plane. The workflow:
+
+- authenticates to Kaggle from GitHub secrets
+- builds the private Kaggle kernel package from this repo
+- points the Kaggle runtime at the exact GitHub repo and branch that triggered the workflow
+- embeds the HF token into that private kernel package
+- pushes the kernel to Kaggle and waits until training starts (or a terminal startup failure is detected)
+
+Kaggle provides the GPU, while Hugging Face remains the system of record for datasets, checkpoints, and the model repo.
 
 Required GitHub secrets:
 
+- `KAGGLE_USERNAME`
+- `KAGGLE_KEY`
 - `HF_TOKEN`
 - `WANDB_API_KEY` if you want remote W&B logging
 
@@ -46,8 +57,18 @@ Recommended GitHub repo variables:
 - `HF_DATASET_REPO`
 - `HF_MODEL_REPO`
 - `HF_BASE_MODEL`
+- `HF_BUCKET_URI`
 
 The workflow falls back to the current NorthernTribe Hugging Face repos when those vars are not set, and defaults the base model to `Qwen/Qwen2.5-3B-Instruct`.
+
+### Manual Self-Hosted Fallback
+
+`workflow_dispatch` exposes a `backend` input:
+
+- `kaggle` submits training to Kaggle
+- `self-hosted` runs the original direct GPU flow on a runner labeled `self-hosted, linux, x64, gpu`
+
+Use the self-hosted backend only when you intentionally want training to happen on your own runner instead of Kaggle.
 
 ## Checkpoint Policy
 

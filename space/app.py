@@ -2208,9 +2208,9 @@ def build_app() -> gr.Blocks:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     app = build_app()
+    default_server_name = "0.0.0.0" if os.getenv("SPACE_ID") else "127.0.0.1"
     app.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
+        server_name=os.getenv("GRADIO_SERVER_NAME", default_server_name),
+        server_port=int(os.getenv("PORT", "7860")),
         share=False,
-        show_api=False,
     )

@@ -28,8 +28,8 @@ python scripts/generate_cultural_pairs.py
 # 2. Validate glossary
 python scripts/build_glossary.py
 
-# 3. Prepare training data
-python scripts/prepare_data.py --input_dir data/raw --output_dir data/processed
+# 3. Prepare the current MT dataset snapshot
+python scripts/prepare_data.py --input_dir data/raw --output_dir data/final_v3
 ```
 
 ## Training
@@ -40,6 +40,18 @@ bash training/run_train.sh
 
 # Or with custom params
 python scripts/train_qlora.py --model_name Qwen/Qwen2.5-3B-Instruct --num_train_epochs 5
+
+# Resumable daily training from Hugging Face
+python scripts/train_daily_from_hf.py \
+    --dataset-repo NorthernTribe-Research/maasai-translation-corpus \
+    --model-repo NorthernTribe-Research/maasai-en-mt \
+    --max-steps 800 \
+    --save-steps 100
+
+# Kaggle retry wrapper
+KAGGLE_CONFIG_DIR="$PWD" .venv/bin/python scripts/run_kaggle_training.py \
+    --max-attempts 5 \
+    --embed-local-hf-token
 ```
 
 ## Evaluation
@@ -47,7 +59,7 @@ python scripts/train_qlora.py --model_name Qwen/Qwen2.5-3B-Instruct --num_train_
 ```bash
 python scripts/evaluate_mt.py \
     --model_dir outputs/maasai-en-mt-qlora \
-    --test_file data/processed/test.jsonl \
+    --test_file data/final_v3/test.jsonl \
     --glossary_file data/glossary/maasai_glossary.json
 ```
 
@@ -66,22 +78,45 @@ python scripts/infer_asr.py --audio_file path/to/maasai_audio.wav
 
 ## Hugging Face Space Deployment
 
-1. Create a new Space on Hugging Face
-2. Upload `space/app.py` as the main app
-3. Set environment variables:
-   - `TRANSLATION_MODEL_ID`: Your model repo ID
-   - `ASR_MODEL_ID`: `microsoft/paza-whisper-large-v3-turbo`
-4. Add `requirements.txt` to the Space
+Recommended path:
+
+```bash
+# Preview the Space publish plan
+python scripts/publish_to_hf.py --skip-dataset --skip-model
+
+# Publish only the Space bundle
+python scripts/push_space_to_hf.py
+```
+
+The maintained Space bundle includes:
+
+- `space/app.py`
+- `space/style.css`
+- `space/README.md`
+- `space/examples/*`
+- bundled glossary data from `data/glossary/maasai_glossary.json`
+
+Relevant runtime environment variables:
+
+- `TRANSLATION_MODEL_ID`
+- `ASR_MODEL_ID`
+
+Do not use `scripts/simple_push_space.py` for the current Space path; it is a legacy helper and does not match the maintained publisher bundle.
 
 ## Hugging Face Model/Dataset Publishing
 
 ```bash
-# Login
-huggingface-cli login
+# Preview the full publish plan
+python scripts/publish_to_hf.py
 
-# Push model
-huggingface-cli upload NorthernTribe-Research/maasai-en-mt outputs/maasai-en-mt-qlora/
+# Publish dataset + Space + model/scaffold
+python scripts/publish_to_hf.py --execute --create-model-repo
 
-# Push dataset
-huggingface-cli upload NorthernTribe-Research/maasai-translation-corpus data/final_v3/
+# Publish only the dataset
+python scripts/push_dataset_to_hf.py
+
+# Publish only the model/scaffold
+python scripts/push_model_to_hf.py
 ```
+
+If `outputs/maasai-en-mt-qlora/` still contains placeholder artifacts, the publisher creates the model repo scaffold and metadata without pretending mock weights are a finished checkpoint.

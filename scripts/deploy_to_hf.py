@@ -85,6 +85,26 @@ def check_data_ready(project_root: Path) -> bool:
     
     return True
 
+def describe_model_state(model_dir: Path) -> tuple[str, bool]:
+    """Describe whether local model outputs look real or placeholder-only."""
+    if not model_dir.exists():
+        return "❌ Not yet trained", False
+
+    readme = model_dir / "README.md"
+    if readme.exists():
+        try:
+            readme_text = readme.read_text(encoding="utf-8").lower()
+        except OSError:
+            readme_text = ""
+        if "placeholder artifacts" in readme_text:
+            return "⚠️ Placeholder artifacts only", False
+
+    adapter_file = model_dir / "adapter_model.bin"
+    if adapter_file.exists() and adapter_file.stat().st_size < 1024:
+        return "⚠️ Placeholder artifacts only", False
+
+    return "✓ Trained checkpoint", True
+
 def push_dataset(project_root: Path) -> bool:
     """Execute dataset push."""
     print_section("PUSHING DATASET TO HF")
@@ -129,6 +149,11 @@ def push_model(project_root: Path) -> bool:
         print(f"⚠️ Model checkpoint not found at {model_dir}")
         print("   Run training first: bash training/run_train.sh")
         return False
+
+    model_state, has_real_checkpoint = describe_model_state(model_dir)
+    print(f"Local model state: {model_state}")
+    if not has_real_checkpoint:
+        print("   Continuing will publish only the model repo scaffold/metadata via the unified publisher.")
     
     script = project_root / "scripts" / "push_model_to_hf.py"
     if not script.exists():
@@ -164,7 +189,8 @@ def show_status(project_root: Path) -> None:
     print(f"\\n🤖 Model:")
     model_path = project_root / "outputs" / "maasai-en-mt-qlora"
     print(f"   https://huggingface.co/{username}/maasai-en-mt")
-    print(f"   Status: {'✓ Trained' if model_path.exists() else '❌ Not yet trained'}")
+    model_state, _ = describe_model_state(model_path)
+    print(f"   Status: {model_state}")
     
     if model_path.exists():
         model_size_mb = sum(f.stat().st_size for f in model_path.rglob("*")) / 1024**2

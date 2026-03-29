@@ -64,11 +64,15 @@ def kaggle_env(root: Path) -> dict[str, str]:
 
 
 def load_kaggle_username(root: Path) -> str:
+    username = str(os.getenv("KAGGLE_USERNAME", "")).strip()
+    if username:
+        return username
+
     with (root / "kaggle.json").open("r", encoding="utf-8") as handle:
         payload = json.load(handle)
     username = str(payload.get("username", "")).strip()
     if not username:
-        raise RuntimeError("kaggle.json is missing a username field.")
+        raise RuntimeError("Kaggle username is missing. Set KAGGLE_USERNAME or provide kaggle.json.")
     return username
 
 

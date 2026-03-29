@@ -14,6 +14,9 @@ import shutil
 import subprocess
 from pathlib import Path
 
+HF_TOKEN_ENV_VARS = ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HF_API_KEY")
+WANDB_TOKEN_ENV_VARS = ("WANDB_API_KEY", "WANDB_TOKEN")
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build and push the Maasai Kaggle training kernel")
@@ -77,6 +80,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Embed the local Hugging Face token from huggingface-api-key.json into the private Kaggle kernel package",
     )
+    parser.add_argument(
+        "--embed-env-hf-token",
+        action="store_true",
+        help="Embed the Hugging Face token from CI/local environment variables into the private Kaggle kernel package",
+    )
+    parser.add_argument(
+        "--embed-env-wandb-api-key",
+        action="store_true",
+        help="Embed the W&B API key from CI/local environment variables into the private Kaggle kernel package",
+    )
     parser.add_argument("--public", action="store_true", help="Make the Kaggle kernel public (default is private)")
     parser.add_argument("--execute", action="store_true", help="Actually push the kernel to Kaggle")
     parser.add_argument("--status", action="store_true", help="Query Kaggle status after push")
@@ -137,13 +150,61 @@ def load_local_wandb_key(project_root: Path) -> str | None:
     return extract_wandb_key(path.read_text(encoding="utf-8"))
 
 
-def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
-    wandb_api_key = None
-    if args.report_to == "wandb":
-        wandb_api_key = load_local_wandb_key(project_root)
-    hf_token = None
+def first_env_value(*names: str) -> str | None:
+    for name in names:
+        value = str(os.getenv(name, "")).strip()
+        if value:
+            return value
+    return None
+
+
+def resolve_kaggle_username(project_root: Path) -> str:
+    username = first_env_value("KAGGLE_USERNAME")
+    if username:
+        return username
+    config = load_kaggle_config(project_root)
+    username = str(config.get("username", "")).strip()
+    if username:
+        return username
+    raise RuntimeError("Kaggle username is missing. Set KAGGLE_USERNAME or provide kaggle.json.")
+
+
+def resolve_hf_token(args: argparse.Namespace, project_root: Path) -> str | None:
+    if args.embed_env_hf_token:
+        token = first_env_value(*HF_TOKEN_ENV_VARS)
+        if not token:
+            raise RuntimeError(
+                "--embed-env-hf-token was requested, but no HF token was found in "
+                f"{', '.join(HF_TOKEN_ENV_VARS)}."
+            )
+        return token
     if args.embed_local_hf_token:
-        hf_token = str(load_hf_keyfile(project_root).get("key", "")).strip() or None
+        token = str(load_hf_keyfile(project_root).get("key", "")).strip()
+        if not token:
+            raise RuntimeError(
+                "--embed-local-hf-token was requested, but huggingface-api-key.json did not contain a key."
+            )
+        return token
+    return None
+
+
+def resolve_wandb_api_key(args: argparse.Namespace, project_root: Path) -> str | None:
+    if args.report_to != "wandb":
+        return None
+    if args.embed_env_wandb_api_key:
+        wandb_api_key = first_env_value(*WANDB_TOKEN_ENV_VARS)
+        if not wandb_api_key:
+            raise RuntimeError(
+                "--embed-env-wandb-api-key was requested, but no W&B key was found in "
+                f"{', '.join(WANDB_TOKEN_ENV_VARS)}."
+            )
+        return wandb_api_key
+    return load_local_wandb_key(project_root)
+
+
+def build_runtime_config(args: argparse.Namespace, project_root: Path) -> dict:
+    wandb_api_key = resolve_wandb_api_key(args, project_root)
+    hf_token = resolve_hf_token(args, project_root)
 
     return {
         "project_git_url": args.project_git_url,
@@ -223,12 +284,9 @@ def run(cmd: list[str], *, env: dict[str, str]) -> None:
 def main() -> int:
     args = parse_args()
     project_root = Path(__file__).resolve().parent.parent
-    kaggle_config = load_kaggle_config(project_root)
-    username = str(kaggle_config.get("username", "")).strip()
-    if not username:
-        raise RuntimeError("kaggle.json is missing a username field.")
-    if args.public and args.embed_local_hf_token:
-        raise RuntimeError("Refusing to embed a local HF token into a public Kaggle kernel.")
+    username = resolve_kaggle_username(project_root)
+    if args.public and (args.embed_local_hf_token or args.embed_env_hf_token or args.embed_env_wandb_api_key):
+        raise RuntimeError("Refusing to embed CI/local secrets into a public Kaggle kernel.")
 
     output_dir = Path(args.output_dir)
     if output_dir.exists():

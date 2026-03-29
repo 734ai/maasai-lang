@@ -1,8 +1,16 @@
-name: Daily HF Training
+name: Daily Training
 
 on:
   workflow_dispatch:
     inputs:
+      backend:
+        description: Training backend
+        required: true
+        type: choice
+        default: kaggle
+        options:
+          - kaggle
+          - self-hosted
       max_steps:
         description: Override the daily max steps
         required: false
@@ -15,15 +23,141 @@ on:
     - cron: "15 2 * * *"
 
 concurrency:
-  group: daily-hf-training
+  group: daily-training
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  train:
-    name: Resume and Push Checkpoints
+  kaggle-train:
+    name: Submit Kaggle Training
+    if: ${{ github.event_name == 'schedule' || inputs.backend == 'kaggle' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      PROJECT_GIT_URL: https://github.com/${{ github.repository }}.git
+      PROJECT_BRANCH: ${{ github.ref_name }}
+      HF_DATASET_REPO: ${{ vars.HF_DATASET_REPO }}
+      HF_MODEL_REPO: ${{ vars.HF_MODEL_REPO }}
+      HF_BASE_MODEL: ${{ vars.HF_BASE_MODEL }}
+      HF_BUCKET_URI: ${{ vars.HF_BUCKET_URI }}
+      DEFAULT_MAX_STEPS: "800"
+      DEFAULT_SAVE_STEPS: "100"
+      KAGGLE_KERNEL_SLUG: "maasai-daily-hf-training"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Kaggle CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install kaggle
+
+      - name: Validate required secrets and variables
+        run: |
+          if [ -z "${KAGGLE_USERNAME:-}" ] || [ -z "${KAGGLE_KEY:-}" ]; then
+            echo "KAGGLE_USERNAME and KAGGLE_KEY secrets are required for GitHub-triggered Kaggle training."
+            exit 1
+          fi
+
+          if [ -z "${HF_TOKEN:-}" ]; then
+            echo "HF_TOKEN secret is required so the Kaggle runtime can resume and push checkpoints."
+            exit 1
+          fi
+
+          if [ -z "${HF_DATASET_REPO:-}" ]; then
+            HF_DATASET_REPO="NorthernTribe-Research/maasai-translation-corpus"
+            echo "HF_DATASET_REPO var not set; defaulting to $HF_DATASET_REPO"
+          fi
+
+          if [ -z "${HF_MODEL_REPO:-}" ]; then
+            HF_MODEL_REPO="NorthernTribe-Research/maasai-en-mt-staging"
+            echo "HF_MODEL_REPO var not set; defaulting to $HF_MODEL_REPO"
+          fi
+
+          if [ -z "${HF_BASE_MODEL:-}" ]; then
+            HF_BASE_MODEL="Qwen/Qwen2.5-3B-Instruct"
+          fi
+          if [ -z "${HF_BUCKET_URI:-}" ]; then
+            HF_BUCKET_URI="hf://buckets/NorthernTribe-Research/maasai-project-storage"
+          fi
+
+          REPORT_TO="none"
+          if [ -n "${WANDB_API_KEY:-}" ]; then
+            REPORT_TO="wandb"
+          fi
+
+          echo "HF_DATASET_REPO=$HF_DATASET_REPO" >> "$GITHUB_ENV"
+          echo "HF_MODEL_REPO=$HF_MODEL_REPO" >> "$GITHUB_ENV"
+          echo "HF_BASE_MODEL=$HF_BASE_MODEL" >> "$GITHUB_ENV"
+          echo "HF_BUCKET_URI=$HF_BUCKET_URI" >> "$GITHUB_ENV"
+          echo "REPORT_TO=$REPORT_TO" >> "$GITHUB_ENV"
+          echo "KAGGLE_MONITOR_DIR=${RUNNER_TEMP}/kaggle-monitor" >> "$GITHUB_ENV"
+
+      - name: Dispatch Kaggle training
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAX_STEPS="${DEFAULT_MAX_STEPS}"
+          SAVE_STEPS="${DEFAULT_SAVE_STEPS}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MAX_STEPS="${{ github.event.inputs.max_steps }}"
+            SAVE_STEPS="${{ github.event.inputs.save_steps }}"
+          fi
+
+          EXTRA_ARGS=()
+          if [ "$REPORT_TO" = "wandb" ]; then
+            EXTRA_ARGS+=(--embed-env-wandb-api-key)
+          fi
+
+          python scripts/run_kaggle_training.py \
+            --log-dir "$KAGGLE_MONITOR_DIR" \
+            --kernel-slug "$KAGGLE_KERNEL_SLUG" \
+            --max-attempts 5 \
+            --poll-seconds 25 \
+            --startup-timeout-seconds 600 \
+            --project-git-url "$PROJECT_GIT_URL" \
+            --project-branch "$PROJECT_BRANCH" \
+            --dataset-repo "$HF_DATASET_REPO" \
+            --model-repo "$HF_MODEL_REPO" \
+            --bucket-uri "$HF_BUCKET_URI" \
+            --base-model "$HF_BASE_MODEL" \
+            --max-steps "$MAX_STEPS" \
+            --save-steps "$SAVE_STEPS" \
+            --eval-steps "$SAVE_STEPS" \
+            --per-device-train-batch-size 1 \
+            --per-device-eval-batch-size 1 \
+            --gradient-accumulation-steps 32 \
+            --no-augment-with-generation-tasks \
+            --report-to "$REPORT_TO" \
+            --embed-env-hf-token \
+            "${EXTRA_ARGS[@]}"
+
+      - name: Upload Kaggle dispatch artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-training-dispatch
+          path: |
+            ${{ runner.temp }}/kaggle-monitor
+            dist/kaggle_kernel
+          if-no-files-found: ignore
+
+  self-hosted-train:
+    name: Direct Runner Training
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.backend == 'self-hosted' }}
     runs-on: [self-hosted, linux, x64, gpu]
     timeout-minutes: 690
     env:
@@ -45,11 +179,6 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: Validate required secrets and variables
         run: |
@@ -83,8 +212,23 @@ jobs:
           echo "HF_DAILY_WORKDIR=${RUNNER_TEMP}/maasai-daily-hf" >> "$GITHUB_ENV"
           mkdir -p "${RUNNER_TEMP}/maasai-daily-hf"
 
-      - name: Run resumable daily training
+      - name: Preflight GPU
+        run: nvidia-smi
+
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify CUDA runtime
+        run: |
+          python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+          python -c "from transformers import BitsAndBytesConfig; print('BitsAndBytesConfig import ok')"
+
+      - name: Run resumable daily training
+        shell: bash
+        run: |
+          set -euo pipefail
           REPORT_TO="none"
           if [ -n "${WANDB_API_KEY:-}" ]; then
             REPORT_TO="wandb"
@@ -112,12 +256,17 @@ jobs:
             --per-device-eval-batch-size 2 \
             --gradient-accumulation-steps 16 \
             --no-augment-with-generation-tasks \
-            --report-to "$REPORT_TO"
+            --report-to "$REPORT_TO" \
+            2>&1 | tee "$HF_DAILY_WORKDIR/train.log"
 
-      - name: Upload daily training manifest
+      - name: Upload self-hosted training artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: daily-training-manifest
-          path: ${{ runner.temp }}/maasai-daily-hf/run_manifest.json
+          name: self-hosted-training-artifacts
+          path: |
+            ${{ runner.temp }}/maasai-daily-hf/run_manifest.json
+            ${{ runner.temp }}/maasai-daily-hf/train.log
+            ${{ runner.temp }}/maasai-daily-hf/model_output/trainer_state.json
+            ${{ runner.temp }}/maasai-daily-hf/model_output/runs
           if-no-files-found: ignore
