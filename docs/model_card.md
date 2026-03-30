@@ -32,12 +32,12 @@ English↔Maasai translation model for low-resource machine translation and lang
 
 The training recipe in this repo uses the public parallel corpus from `data/final_v3`:
 
-- 9,406 total pairs
-- 7,991 train / 707 valid / 708 test
-- 4,703 en→mas and 4,703 mas→en
-- 8,444 gold-tier and 962 silver-tier examples
+- 9,910 total pairs
+- 8,434 train / 738 valid / 738 test
+- 4,955 en→mas and 4,955 mas→en
+- 8,444 gold-tier and 1,466 silver-tier examples
 
-This release now includes a small open-source supplement layer from public-domain Hollis proverbs and the CC BY 4.0 ASJP Maasai wordlist, in addition to the Bible-derived and curated cultural data already present in the local corpus.
+This release now includes a larger open-source supplement layer from public-domain Hollis proverb pairs, conservative public-domain Hinde vocabulary pairs, and the CC BY 4.0 ASJP Maasai wordlist, in addition to the Bible-derived and curated cultural data already present in the local corpus.
 
 The raw published dataset stores parallel pairs and metadata. The trainer constructs instruction prompts at runtime when needed, so the model can be trained from either prompt/completion records or plain translation pairs. The trainer does not require `id` or `quality_assessment`, which matters because some older `cultural_manual` rows still omit those fields.
 

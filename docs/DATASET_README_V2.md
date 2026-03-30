@@ -45,36 +45,36 @@ dataset_info:
 
 ## Overview
 
-This dataset currently contains **9,406 English-Maasai translation pairs** in the local `data/final_v3` workspace snapshot. It features:
+This dataset currently contains **9,910 English-Maasai translation pairs** in the local `data/final_v3` workspace snapshot. It features:
 
-- **Bible-derived, curated, and open-source rows** (9,406 pairs)
+- **Bible-derived, curated, and open-source rows** (9,910 pairs)
 - **Rich cultural coverage** (15+ domains) - Philosophy, ceremonies, governance, education, greetings, and more
-- **Open-source supplement layer** - Public-domain Hollis proverb pairs and CC BY 4.0 ASJP lexical pairs
+- **Open-source supplement layer** - Public-domain Hollis proverb pairs, conservative public-domain Hinde vocabulary pairs, and CC BY 4.0 ASJP lexical pairs
 - **Perfect 50/50 bidirectional balance** - Both en→mas and mas→en directions
 
 ## Key Features
 
 ### Data Composition
 ```
-Total pairs: 9,406
-├── Train split: 7,991 pairs (85.0%)
-├── Valid split: 707 pairs (7.5%)
-└── Test split:  708 pairs (7.5%)
+Total pairs: 9,910
+├── Train split: 8,434 pairs (85.1%)
+├── Valid split: 738 pairs (7.4%)
+└── Test split:  738 pairs (7.4%)
 
 Quality tiers:
-├── Gold (dataset metadata label): 8,444 pairs (89.8%)
-└── Silver (dataset metadata label): 962 pairs (10.2%)
+├── Gold (dataset metadata label): 8,444 pairs (85.2%)
+└── Silver (dataset metadata label): 1,466 pairs (14.8%)
 
 Language coverage:
-├── English → Maasai: 4,703 pairs
-└── Maasai → English: 4,703 pairs
+├── English → Maasai: 4,955 pairs
+└── Maasai → English: 4,955 pairs
 
 Top domains:
-├── Bible-derived: 8,444 pairs (89.8%)
+├── Bible-derived: 8,444 pairs (85.2%)
+├── Lexicon: 584 pairs
 ├── Proverbs: 158 pairs
 ├── Philosophy: 100 pairs
 ├── Culture: 84 pairs  
-├── Lexicon: 80 pairs
 ├── Environment: 64 pairs
 ├── Education: 60 pairs
 ├── Ceremony: 58 pairs
@@ -85,7 +85,7 @@ Top domains:
 ### Quality Metrics
 - **Confidence Score**: 0.92-0.98 in the current local snapshot
 - **Source mix**: Bible-derived extraction, curated cultural rows, and open-source supplements
-- **Deduplication**: Aggressive deduplication (9,406 unique pairs from 13,670+ raw sources)
+- **Deduplication**: Aggressive deduplication (9,910 unique pairs from 14,174+ raw sources)
 - **Domain Coverage**: 15+ specialized domains for comprehensive fluency
 - **Schema Note**: 680 rows currently omit `id`, and 750 rows omit `quality_assessment`
 
@@ -126,10 +126,10 @@ JSONL format. Each line is a complete translation pair:
 ## Dataset Versions & Timeline
 
 ### Current Local Workspace Snapshot - March 28, 2026
-- Comprehensive corpus: 9,406 pairs
-- Train / valid / test: 7,991 / 707 / 708
-- Quality labels present in local metadata: 8,444 gold and 962 silver
-- Includes post-release open-source supplement rows from Hollis and ASJP
+- Comprehensive corpus: 9,910 pairs
+- Train / valid / test: 8,434 / 738 / 738
+- Quality labels present in local metadata: 8,444 gold and 1,466 silver
+- Includes post-release open-source supplement rows from Hollis, Hinde, and ASJP
 - Older smaller-snapshot references describe the pre-supplement dataset state
 
 ### v1.0 (Previous)

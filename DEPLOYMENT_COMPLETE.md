@@ -171,7 +171,7 @@ python scripts/sync_dataset_to_hf.py \
 
 **Expected:**
 ```
-✅ Dataset validation passed (9,406 samples)
+✅ Dataset validation passed (9,910 samples)
 ✅ Repository: https://huggingface.co/datasets/NorthernTribe-Research/maasai-translation-corpus
 📤 Uploading data splits...
 ✅ Dataset synchronization complete!
@@ -297,7 +297,7 @@ Use this checklist to track deployment progress:
   - [ ] All splits (train/valid/test) verified
   - [ ] Glossary uploaded
   - [ ] Dataset card generated
-  - [ ] 9,406 samples confirmed
+  - [ ] 9,910 samples confirmed
 
 - [ ] **Space Updated & Live**
   - [ ] Code changes committed
@@ -372,7 +372,7 @@ Deployment is considered **successful** when:
 - No hallucinations on preserved terms
 
 ✅ **Dataset**
-- 9,406 pairs available
+- 9,910 pairs available
 - All splits loadable
 - Glossary searchable
 - Metadata complete

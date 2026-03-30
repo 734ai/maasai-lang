@@ -11,13 +11,13 @@
 
 ### 1. Dataset Published to HuggingFace
 - **Repository:** https://huggingface.co/datasets/NorthernTribe-Research/maasai-translation-corpus
-- **Current local size:** 9,406 unique pairs
+- **Current local size:** 9,910 unique pairs
 - **Splits:**
-  - Train: 7,991 pairs (85%)
-  - Valid: 707 pairs (7.5%)
-  - Test: 708 pairs (7.5%)
-- **Quality labels in current metadata:** 8,444 gold / 962 silver
-- **Domains:** Bible-derived (89.8%) + cultural / open-source supplement (10.2%)
+  - Train: 8,434 pairs (85.1%)
+  - Valid: 738 pairs (7.4%)
+  - Test: 738 pairs (7.4%)
+- **Quality labels in current metadata:** 8,444 gold / 1,466 silver
+- **Domains:** Bible-derived (85.2%) + curated/open-source supplement (14.8%)
 - **Files Uploaded:** train.jsonl, valid.jsonl, test.jsonl, README.md, datasetinfo.json
 - **Commit:** https://huggingface.co/datasets/NorthernTribe-Research/maasai-translation-corpus/commit/50a5933a6ada0c41aa744d2baf90ba751c89c817
 
@@ -70,7 +70,7 @@
 ## ⏳ Next Steps: Model Training
 
 ### Training Requirements
-- **Dataset:** ✅ Ready (7,991 pairs at data/final_v3/train.jsonl)
+- **Dataset:** ✅ Ready (8,434 pairs at `data/final_v3/train.jsonl`)
 - **GPU:** ❌ Not available locally (Intel i5 CPU-only system)
 - **Solution:** Use cloud GPU provider
 
@@ -162,15 +162,14 @@ cd space_repo && git add . && git commit -m "Add trained model" && git push
 ## Project Statistics
 
 ### Dataset Composition
-- **Total Pairs:** 9,406 (deduplicated)
+- **Total Pairs:** 9,910 (deduplicated)
 - **Bidirectional Balance:** 50/50 (en→mas / mas→en)
 - **Source Mix:**
-  - Bible-derived: 8,444 pairs (89.8%)
-  - Cultural/manual/open-source supplement: 962 pairs (10.2%)
+  - Bible-derived: 8,444 pairs (85.2%)
+  - Curated/manual/open-source supplement: 1,466 pairs (14.8%)
 - **Quality Distribution:**
-  - Gold (0.6%): 82 high-confidence pairs
-  - Silver (0.5%): 64 manually curated pairs
-  - Bronze (98.9%): 13,524 exploratory/synthetic pairs
+  - Gold: 8,444 pairs
+  - Silver: 1,466 pairs
 
 ### Model Specifications
 - **Base:** Qwen/Qwen2.5-3B-Instruct (3B parameters)
@@ -191,7 +190,7 @@ cd space_repo && git add . && git commit -m "Add trained model" && git push
 
 ## Verification Checklist
 
-- ✅ Dataset published to HF Hub (current local snapshot: 9,406 pairs, train/valid/test splits)
+- ✅ Dataset published to HF Hub (current local snapshot: 9,910 pairs, train/valid/test splits)
 - ✅ Space updated with Engram glossary layer
 - ✅ Engram layer integrated into inference pipeline
 - ✅ Optimized inference scripts ready (llama.cpp)

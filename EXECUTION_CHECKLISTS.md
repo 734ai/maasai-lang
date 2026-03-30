@@ -368,7 +368,7 @@ EOF
 - [ ] Train split: 7,991 pairs
 - [ ] Valid split: 707 pairs
 - [ ] Test split: 708 pairs
-- [ ] Total: 9,406 pairs
+- [ ] Total: 9,910 pairs
 - [ ] Domain distribution includes: philosophy, ceremony, governance (20%+)
 - [ ] Source distribution improved (cultural > 30%)
 - [ ] `summary.json` generated and readable

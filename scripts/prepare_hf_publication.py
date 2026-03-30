@@ -60,7 +60,7 @@ Run in project root:
   cat > datasetinfo.json << 'EOF'
 {
   "pretty_name": "Maasai-English Translation Corpus",
-  "description": "Current data/final_v3 English-Maasai corpus for Maasai language preservation. 9,406 EN-MAS pairs in the local workspace snapshot.",
+  "description": "Current data/final_v3 English-Maasai corpus for Maasai language preservation. 9,910 EN-MAS pairs in the local workspace snapshot.",
   "citation": "@dataset{maasai_translation_2026, title={Maasai-English Translation Corpus}, author={NorthernTribe Research}, year={2026}}",
   "homepage": "https://github.com/NorthernTribe/maasai-language-showcase",
   "license": "cc-by-4.0",
@@ -137,35 +137,35 @@ def create_readme_for_hf():
 
 Current `data/final_v3` corpus for Maasai language preservation.
 
-**9,406 English-Maasai translation pairs** in the current local workspace snapshot.
+**9,910 English-Maasai translation pairs** in the current local workspace snapshot.
 
 ## Dataset at a Glance
 
-- **Size**: 9,406 unique pairs (7,991 train / 707 valid / 708 test)
-- **Quality labels**: 8,444 gold + 962 silver in current local metadata
+- **Size**: 9,910 unique pairs (8,434 train / 738 valid / 738 test)
+- **Quality labels**: 8,444 gold + 1,466 silver in current local metadata
 - **Languages**: English ↔ Maasai (50/50 bidirectional balance)
-- **Domains**: Bible-derived (89.8%), plus philosophy, culture, ceremonies, education, greetings, governance, environment, and open-source supplement rows
+- **Domains**: Bible-derived (85.2%), plus lexicon, philosophy, culture, ceremonies, education, greetings, governance, environment, and open-source supplement rows
 - **Format**: JSONL with rich metadata (domain, tier, confidence, etc.)
 
 ## Key Statistics
 
 | Metric | Value |
 |--------|-------|
-| Total pairs | 9,406 |
-| Training pairs | 7,991 (85%) |
-| Validation pairs | 707 (7.5%) |
-| Test pairs | 708 (7.5%) |
-| Gold tier | 8,444 pairs (89.8%) |
-| Silver tier | 962 pairs (10.2%) |
-| Unique domains | 15+ |
-| EN→MAS direction | 4,703 pairs (50%) |
-| MAS→EN direction | 4,703 pairs (50%) |
+| Total pairs | 9,910 |
+| Training pairs | 8,434 (85.1%) |
+| Validation pairs | 738 (7.4%) |
+| Test pairs | 738 (7.4%) |
+| Gold tier | 8,444 pairs (85.2%) |
+| Silver tier | 1,466 pairs (14.8%) |
+| Unique domains | 21 |
+| EN→MAS direction | 4,955 pairs (50%) |
+| MAS→EN direction | 4,955 pairs (50%) |
 
 ## Contents
 
-- `train.jsonl` - Training set (7,991 pairs)
-- `valid.jsonl` - Validation set (707 pairs)
-- `test.jsonl` - Test set (708 pairs)
+- `train.jsonl` - Training set (8,434 pairs)
+- `valid.jsonl` - Validation set (738 pairs)
+- `test.jsonl` - Test set (738 pairs)
 
 ## Use Cases
 

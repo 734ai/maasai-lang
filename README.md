@@ -42,6 +42,9 @@ python scripts/evaluate_mt.py
 
 # Run Space locally
 python space/app.py
+
+# Check hosted Space health
+.venv/bin/python scripts/check_space_health.py
 ```
 
 ## Publish to Hugging Face

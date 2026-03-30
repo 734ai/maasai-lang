@@ -107,7 +107,7 @@ def create_mock_training_artifacts():
 
 - **Base Model:** Qwen/Qwen2.5-3B-Instruct (3B parameters)
 - **Fine-tuning Method:** QLoRA (Quantized LoRA)
-- **Training Data Snapshot:** 9,406 local pairs (7,991 train / 707 valid / 708 test)
+- **Training Data Snapshot:** 9,910 local pairs (8,434 train / 738 valid / 738 test)
 - **Adapter Rank:** 16 (LoRA)
 - **Adapter Alpha:** 32
 

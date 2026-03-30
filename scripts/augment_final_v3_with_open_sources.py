@@ -18,6 +18,7 @@ from typing import Any
 
 DEFAULT_INPUTS = (
     "data/raw/public_domain_hollis_proverbs.jsonl",
+    "data/raw/public_domain_hinde_vocabulary.jsonl",
     "data/raw/open_asjp_maasai_wordlist.jsonl",
 )
 DEFAULT_OUTPUT_DIR = "data/final_v3"

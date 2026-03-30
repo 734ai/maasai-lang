@@ -15,6 +15,7 @@ import json
 import logging
 import re
 from html import escape
+from threading import Lock as ThreadLock
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,21 @@ RESEARCH_SNAPSHOT_PATH = APP_DIR / "examples" / "research_snapshot.json"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("maasai-space")
+
+
+def configure_gradio_runtime() -> None:
+    try:
+        from multiprocessing import Lock as MpLock
+
+        MpLock()
+    except PermissionError:
+        import gradio.flagging as gradio_flagging
+
+        gradio_flagging.Lock = ThreadLock
+        logger.warning("Multiprocessing locks unavailable; using threading lock fallback for Gradio flagging.")
+
+
+configure_gradio_runtime()
 
 
 # ---------------------------------------------------------------------------
@@ -212,17 +228,17 @@ def load_research_snapshot() -> dict[str, Any]:
 
     fallback_snapshot = {
         "dataset": {
-            "total_pairs": 9406,
-            "train_pairs": 7991,
-            "valid_pairs": 707,
-            "test_pairs": 708,
-            "balanced_directions": "4,703 en→mas / 4,703 mas→en",
+            "total_pairs": 9910,
+            "train_pairs": 8434,
+            "valid_pairs": 738,
+            "test_pairs": 738,
+            "balanced_directions": "4,955 en→mas / 4,955 mas→en",
             "top_domains": [
                 {"domain": "bible", "count": 8444},
+                {"domain": "lexicon", "count": 584},
                 {"domain": "proverbs", "count": 158},
                 {"domain": "philosophy", "count": 100},
                 {"domain": "culture", "count": 84},
-                {"domain": "lexicon", "count": 80},
             ],
         },
         "glossary": {
@@ -1775,6 +1791,7 @@ def build_app() -> gr.Blocks:
                     examples=load_sample_prompts(),
                     inputs=[input_text, direction_dd],
                     label="Reference prompts",
+                    cache_examples=False,
                 )
 
             with gr.Tab("Composition"):
@@ -1888,6 +1905,7 @@ def build_app() -> gr.Blocks:
                         composition_terms,
                     ],
                     label="Composition briefs",
+                    cache_examples=False,
                 )
 
             with gr.Tab("Speech"):
@@ -2141,10 +2159,10 @@ def build_app() -> gr.Blocks:
                     <div class="about-panel">
                         <h3>Training data</h3>
                         <ul class="detail-list">
-                            <li>7,991 training pairs (85% of 9,406 total)</li>
-                            <li>707 validation pairs (7.5%)</li>
-                            <li>708 test pairs (7.5%)</li>
-                            <li>97.0% gold-tier, 3.0% silver-tier quality</li>
+                            <li>8,434 training pairs (85.1% of 9,910 total)</li>
+                            <li>738 validation pairs (7.4%)</li>
+                            <li>738 test pairs (7.4%)</li>
+                            <li>85.2% gold-tier, 14.8% silver-tier quality</li>
                             <li>103+ protected cultural terms</li>
                             <li>14+ Maasai sections and sub-groups covered</li>
                             <li>98% confidence threshold for preservation</li>

@@ -450,7 +450,7 @@ See [Creative Commons BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/
 ## Version History
 
 - **v1.0** (March 27, 2026): Initial public release
-  - 9,406 parallel pairs in the current local snapshot
+  - 9,910 parallel pairs in the current local snapshot
   - 103-entry glossary
   - 14+ Maasai sections represented
 

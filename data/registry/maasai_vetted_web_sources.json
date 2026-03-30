@@ -1,0 +1,389 @@
+{
+  "registry_id": "maasai_vetted_web_sources",
+  "registry_version": 1,
+  "updated_on": "2026-03-29",
+  "scope": "Vetted Maasai web sources for lawful discovery and harvest planning only.",
+  "policy": {
+    "goal": "Lawful source expansion, not indiscriminate scraping.",
+    "download_plan_statuses": [
+      "approved"
+    ],
+    "manual_review_statuses": [
+      "gated_access",
+      "reference_only"
+    ],
+    "default_harvest_mode": "plan_only",
+    "notes": "Only direct-download sources with a clear public-domain or open-license basis belong in automated download plans."
+  },
+  "sources": [
+    {
+      "id": "hollis_1905_folklore_archive",
+      "title": "The Masai: their language and folklore",
+      "authors": [
+        "Alfred Claud Hollis"
+      ],
+      "publication_year": 1905,
+      "publisher": "Clarendon Press",
+      "source_type": "book",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "approved",
+      "rights_status": "public_domain",
+      "license": "Public domain",
+      "access": {
+        "model": "public_download",
+        "landing_url": "https://openlibrary.org/books/OL7217989M/The_Masai",
+        "source_page_url": "https://archive.org/details/masaitheirlangua00holluoft",
+        "download_url": "https://archive.org/download/masaitheirlangua00holluoft/masaitheirlangua00holluoft_djvu.txt"
+      },
+      "provenance": {
+        "discovered_via": "docs/open_source_maasai_inventory.md",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://openlibrary.org/books/OL7217989M/The_Masai",
+          "https://archive.org/details/masaitheirlangua00holluoft"
+        ],
+        "rights_basis": "Published in 1905 and exposed by Open Library / Internet Archive with full-text download options."
+      },
+      "usage_policy": {
+        "trainable": true,
+        "ingest_ready": true,
+        "download_plannable": true,
+        "manual_clearance_required": false,
+        "notes": "Prefer conservative Maa-English extraction with row-level provenance."
+      },
+      "harvest": {
+        "method": "direct_download",
+        "target_path": "data/external_hollis_maasai_1905.txt",
+        "expected_format": "text/plain"
+      }
+    },
+    {
+      "id": "hinde_1901_grammar_archive",
+      "title": "The Masai language: grammatical notes together with a vocabulary",
+      "authors": [
+        "Hildegarde Beatrice Hinde"
+      ],
+      "publication_year": 1901,
+      "publisher": "The University Press",
+      "source_type": "grammar_vocabulary",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "approved",
+      "rights_status": "public_domain",
+      "license": "Public domain",
+      "access": {
+        "model": "public_download",
+        "landing_url": "https://openlibrary.org/works/OL7839157W/The_Masai_language",
+        "source_page_url": "https://archive.org/details/masailanguagegra00hindrich",
+        "download_url": "https://archive.org/download/masailanguagegra00hindrich/masailanguagegra00hindrich_djvu.txt"
+      },
+      "provenance": {
+        "discovered_via": "docs/open_source_maasai_inventory.md",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://openlibrary.org/works/OL7839157W/The_Masai_language",
+          "https://archive.org/details/masailanguagegra00hindrich"
+        ],
+        "rights_basis": "Published in 1901 and surfaced by Open Library with Internet Archive identifiers and download options."
+      },
+      "usage_policy": {
+        "trainable": true,
+        "ingest_ready": true,
+        "download_plannable": true,
+        "manual_clearance_required": false,
+        "notes": "Approved for lawful acquisition. Conservative vocabulary extraction is now implemented for high-confidence OCR sections; noisier sections still require manual review before ingest."
+      },
+      "harvest": {
+        "method": "direct_download",
+        "target_path": "data/external_hinde_maasai_1901.txt",
+        "expected_format": "text/plain"
+      }
+    },
+    {
+      "id": "asjp_maasai_wordlist",
+      "title": "ASJP Database: Maasai wordlist",
+      "authors": [
+        "Viveka Velupillai"
+      ],
+      "publication_year": 1982,
+      "publisher": "ASJP / Max Planck Institute for Evolutionary Anthropology",
+      "source_type": "lexicon_json",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "approved",
+      "rights_status": "cc_by_4_0",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "access": {
+        "model": "public_download",
+        "landing_url": "https://asjp.clld.org/languages/MAASAI",
+        "download_url": "https://asjp.clld.org/languages/MAASAI.json"
+      },
+      "provenance": {
+        "discovered_via": "docs/open_source_maasai_inventory.md",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://asjp.clld.org/languages/MAASAI",
+          "https://creativecommons.org/licenses/by/4.0/"
+        ],
+        "rights_basis": "The ASJP Maasai page exposes a JSON endpoint and states that the database is licensed under CC BY 4.0."
+      },
+      "usage_policy": {
+        "trainable": true,
+        "ingest_ready": true,
+        "download_plannable": true,
+        "manual_clearance_required": false,
+        "notes": "Lexical source only; preserve attribution in downstream manifests."
+      },
+      "harvest": {
+        "method": "direct_download",
+        "target_path": "data/external_asjp_maasai.json",
+        "expected_format": "application/json"
+      }
+    },
+    {
+      "id": "mcaa1_msu_anv_data_ke_maasai",
+      "title": "African Next Voices: Pilot Data Collection in Kenya",
+      "publication_year": 2025,
+      "publisher": "MCAA1 / Michigan State University",
+      "source_type": "speech_dataset",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "gated_access",
+      "rights_status": "cc_by_4_0_gated",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "access": {
+        "model": "gated_huggingface_dataset",
+        "landing_url": "https://huggingface.co/datasets/MCAA1-MSU/anv_data_ke"
+      },
+      "provenance": {
+        "discovered_via": "web_review",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://huggingface.co/datasets/MCAA1-MSU/anv_data_ke",
+          "https://creativecommons.org/licenses/by/4.0/"
+        ],
+        "rights_basis": "The dataset card lists CC BY 4.0 licensing, but access is gated and requires agreeing to share contact information."
+      },
+      "usage_policy": {
+        "trainable": true,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "High-priority Maasai ASR candidate. Request access before any download or ingestion."
+      },
+      "harvest": {
+        "method": "gated_access_request",
+        "expected_format": "dataset_repository"
+      }
+    },
+    {
+      "id": "uoregon_maa_language_project",
+      "title": "Maa Maasai Language Project",
+      "publication_year": 2008,
+      "publisher": "University of Oregon",
+      "source_type": "dictionary_text_portal",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "gated_access",
+      "rights_status": "copyrighted_permission_required",
+      "license": "No open reuse grant found",
+      "access": {
+        "model": "public_site_permission_required",
+        "landing_url": "https://pages.uoregon.edu/maasai/"
+      },
+      "provenance": {
+        "discovered_via": "web_review",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://pages.uoregon.edu/maasai/"
+        ],
+        "rights_basis": "The site exposes valuable dictionary and text resources but asks users not to copy without acknowledgment, so ingestion should wait for explicit permission."
+      },
+      "usage_policy": {
+        "trainable": false,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "Treat as a permission-request lead only unless maintainers explicitly authorize corpus use."
+      },
+      "harvest": {
+        "method": "manual_clearance_only",
+        "expected_format": "html_portal"
+      }
+    },
+    {
+      "id": "frans_mol_1996_google_books_preview",
+      "title": "Maasai Language & Culture: Dictionary",
+      "authors": [
+        "Frans Mol"
+      ],
+      "publication_year": 1996,
+      "publisher": "Maasai Centre Lemek",
+      "source_type": "dictionary",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "gated_access",
+      "rights_status": "copyrighted_preview_only",
+      "license": "No open reuse grant found",
+      "access": {
+        "model": "preview_only",
+        "landing_url": "https://books.google.com/books/about/Maasai_Language_Culture.html?id=22kOAAAAYAAJ"
+      },
+      "provenance": {
+        "discovered_via": "web_review",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://books.google.com/books/about/Maasai_Language_Culture.html?id=22kOAAAAYAAJ"
+        ],
+        "rights_basis": "Google Books exposes bibliographic metadata and limited preview content, but no open download or reuse grant was surfaced during review."
+      },
+      "usage_policy": {
+        "trainable": false,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "Keep as a bibliographic lead only unless rights are cleared with the rightsholder."
+      },
+      "harvest": {
+        "method": "manual_clearance_only",
+        "expected_format": "html_preview"
+      }
+    },
+    {
+      "id": "ohchr_udhr_maa_2023",
+      "title": "Universal Declaration of Human Rights: translation into Maa",
+      "publication_year": 2023,
+      "publisher": "United Nations / OHCHR",
+      "source_type": "parallel_text_catalogue",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "reference_only",
+      "rights_status": "public_text_rights_review_required",
+      "license": "Rights review required",
+      "access": {
+        "model": "public_catalogue",
+        "landing_url": "https://searchlibrary.ohchr.org/record/30740"
+      },
+      "provenance": {
+        "discovered_via": "web_review",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://searchlibrary.ohchr.org/record/30740"
+        ],
+        "rights_basis": "The Maa translation is publicly catalogued by OHCHR, but this registry does not yet treat it as open for bulk training ingestion."
+      },
+      "usage_policy": {
+        "trainable": false,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "Use as a reference/evaluation lead until reuse conditions are reviewed."
+      },
+      "harvest": {
+        "method": "manual_review_only",
+        "expected_format": "catalogue_record"
+      }
+    },
+    {
+      "id": "wikitongues_massai_ogg",
+      "title": "File:Massai.ogg",
+      "publisher": "Wikimedia Commons / Wikitongues",
+      "source_type": "speech_sample",
+      "languages": [
+        "mas"
+      ],
+      "status": "reference_only",
+      "rights_status": "cc_by_sa_policy_review",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/deed.en",
+      "access": {
+        "model": "public_download_policy_review",
+        "landing_url": "https://commons.wikimedia.org/wiki/File:Massai.ogg"
+      },
+      "provenance": {
+        "discovered_via": "web_review",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://commons.wikimedia.org/wiki/File:Massai.ogg",
+          "https://creativecommons.org/licenses/by-sa/4.0/deed.en"
+        ],
+        "rights_basis": "The sample is public under CC BY-SA 4.0, but share-alike implications should be reviewed before training use."
+      },
+      "usage_policy": {
+        "trainable": false,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "Useful for lightweight ASR/demo checks; keep out of automatic training until policy is clarified."
+      },
+      "harvest": {
+        "method": "manual_review_only",
+        "expected_format": "audio_file"
+      }
+    },
+    {
+      "id": "masaimara_ke_2025_language_guide",
+      "title": "Learn Maasai Language Guide",
+      "publication_year": 2025,
+      "publisher": "masaimara.ke",
+      "source_type": "guide_pdf",
+      "languages": [
+        "mas",
+        "en"
+      ],
+      "status": "reference_only",
+      "rights_status": "rights_unclear",
+      "license": "Unspecified",
+      "access": {
+        "model": "public_download",
+        "landing_url": "https://masaimara.ke/wp-content/uploads/2025/01/Learn-Maasai-Language-Guide-1.pdf",
+        "download_url": "https://masaimara.ke/wp-content/uploads/2025/01/Learn-Maasai-Language-Guide-1.pdf"
+      },
+      "provenance": {
+        "discovered_via": "docs/open_source_maasai_inventory.md",
+        "reviewed_on": "2026-03-29",
+        "reviewed_by": "codex_cli",
+        "evidence_urls": [
+          "https://masaimara.ke/wp-content/uploads/2025/01/Learn-Maasai-Language-Guide-1.pdf"
+        ],
+        "rights_basis": "Publicly reachable PDF, but no redistribution or training-rights statement was surfaced during review."
+      },
+      "usage_policy": {
+        "trainable": false,
+        "ingest_ready": false,
+        "download_plannable": false,
+        "manual_clearance_required": true,
+        "notes": "Keep for manual review and evaluation ideas only until reuse rights are clarified."
+      },
+      "harvest": {
+        "method": "manual_review_only",
+        "expected_format": "application/pdf"
+      }
+    }
+  ]
+}

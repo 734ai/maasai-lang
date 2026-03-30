@@ -65,7 +65,7 @@ def push_dataset_direct():
     # Add dataset info
     datasetinfo = {
         "dataset_name": "maasai-translation-corpus",
-        "dataset_summary": "Comprehensive English-Maasai translation dataset (9,406 pairs)",
+        "dataset_summary": "Comprehensive English-Maasai translation dataset (9,910 pairs)",
         "language": ["en", "mas"],
         "license": "CC-BY-4.0",
         "task_ids": ["translation"],
@@ -90,7 +90,7 @@ def push_dataset_direct():
         commit_info = api.create_commit(
             repo_id=repo_id,
             operations=files_to_upload,
-            commit_message="Update v2.0: translation corpus refresh (9,406 pairs, open-source proverb and lexicon supplement)",
+            commit_message="Update v2.0: translation corpus refresh (9,910 pairs, Hollis + Hinde + ASJP supplement)",
             repo_type="dataset"
         )
         print(f"✅ Dataset pushed successfully!")

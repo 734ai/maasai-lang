@@ -1,6 +1,6 @@
 # Cloud Training Guide: Maasai Model on Free GPU Resources
 
-**Status:** Local system is CPU-only (Intel i5). Model training (3 epochs on 7.8K pairs) requires GPU acceleration.
+**Status:** Local system is CPU-only (Intel i5). Model training (3 epochs on 8.4K pairs) requires GPU acceleration.
 
 ## Option 1: Google Colab (Recommended - Free)
 
@@ -21,7 +21,7 @@ cp ../docs/DATASET_README_V2.md README.md
 
 # Push to HF
 git add .
-git commit -m "Add current translation corpus snapshot (9,406 pairs, 7991/707/708 splits)"
+git commit -m "Add current translation corpus snapshot (9,910 pairs, 8434/738/738 splits)"
 git push
 ```
 
@@ -126,9 +126,9 @@ python scripts/push_model_to_hf.py outputs/maasai-en-mt-qlora
 ## Dataset Already Prepared
 
 ✅ Training data ready at `data/final_v3/`:
-- 7,991 training pairs (85%)
-- 707 validation pairs (7.5%)
-- 708 test pairs (7.5%)
-- 9,406 total unique pairs (8,444 gold / 962 silver in current metadata)
+- 8,434 training pairs (85.1%)
+- 738 validation pairs (7.4%)
+- 738 test pairs (7.4%)
+- 9,910 total unique pairs (8,444 gold / 1,466 silver in current metadata)
 
 Ready for immediate GPU training!

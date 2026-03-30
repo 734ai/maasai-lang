@@ -137,7 +137,7 @@ with gr.Blocks(title="Maasai Language") as demo:
             mas_out = gr.Textbox(label="English", interactive=False)
             mas_btn.click(translate_mas, mas_in, mas_out)
     
-    gr.Markdown(f"Dataset: 9,406 pairs | Model: Qwen2.5-3B+QLoRA | Status: {app.stats}")
+    gr.Markdown(f"Dataset: 9,910 pairs | Model: Qwen2.5-3B+QLoRA | Status: {app.stats}")
 
 if __name__ == "__main__":
     demo.launch()

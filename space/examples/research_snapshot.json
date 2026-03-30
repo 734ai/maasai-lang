@@ -1,14 +1,18 @@
 {
   "dataset": {
-    "total_pairs": 9406,
-    "train_pairs": 7991,
-    "valid_pairs": 707,
-    "test_pairs": 708,
-    "balanced_directions": "4,703 en→mas / 4,703 mas→en",
+    "total_pairs": 9910,
+    "train_pairs": 8434,
+    "valid_pairs": 738,
+    "test_pairs": 738,
+    "balanced_directions": "4,955 en→mas / 4,955 mas→en",
     "top_domains": [
       {
         "domain": "bible",
         "count": 8444
+      },
+      {
+        "domain": "lexicon",
+        "count": 584
       },
       {
         "domain": "proverbs",
@@ -21,10 +25,6 @@
       {
         "domain": "culture",
         "count": 84
-      },
-      {
-        "domain": "lexicon",
-        "count": 80
       },
       {
         "domain": "education",

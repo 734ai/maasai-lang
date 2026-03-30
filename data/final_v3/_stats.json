@@ -1,15 +1,15 @@
 {
-  "total_pairs": 9406,
-  "unique_ids": 8727,
+  "total_pairs": 9910,
+  "unique_ids": 9231,
   "domains": 21,
-  "avg_confidence": 0.9765362534552413,
+  "avg_confidence": 0.9726437941473259,
   "language_pairs": {
-    "mas-en": 4703,
-    "en-mas": 4703
+    "mas-en": 4955,
+    "en-mas": 4955
   },
   "tier_distribution": {
     "gold": 8444,
-    "silver": 962
+    "silver": 1466
   },
-  "quality_score_avg": 0.9799277057197534
+  "quality_score_avg": 0.9758627648839555
 }

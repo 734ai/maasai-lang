@@ -101,6 +101,22 @@ Relevant runtime environment variables:
 - `TRANSLATION_MODEL_ID`
 - `ASR_MODEL_ID`
 
+Live health check:
+
+```bash
+# Probe the hosted Space and Gradio API directly
+.venv/bin/python scripts/check_space_health.py
+
+# JSON output for automation / monitoring
+.venv/bin/python scripts/check_space_health.py --json
+```
+
+Exit codes:
+
+- `0` = healthy
+- `2` = reachable but degraded / transitional
+- `1` = down or probe failure
+
 Do not use `scripts/simple_push_space.py` for the current Space path; it is a legacy helper and does not match the maintained publisher bundle.
 
 ## Hugging Face Model/Dataset Publishing

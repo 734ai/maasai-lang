@@ -231,10 +231,10 @@ Each entry includes:
 
 ### Phase 1: Dataset Enhancement (Foundation)
 **Goal:** Stabilize the 9.4K-pair corpus for trustworthy training
-- ✅ Current local snapshot: 9,406 bidirectional pairs in `data/final_v3`
+- ✅ Current local snapshot: 9,910 bidirectional pairs in `data/final_v3`
 - ➕ Backfill stable `id` values for rows that still omit them
 - ➕ Audit Bible-derived chunk alignment before long training runs
-- 🎯 Preserve the 962-pair supplement while reducing noisy Bible supervision
+- 🎯 Preserve the 1,466-pair supplement while reducing noisy Bible supervision
 
 **Rationale:**
 - The corpus now has enough scale to train, but the Bible-derived majority needs alignment review
@@ -382,11 +382,11 @@ python scripts/prepare_data.py \
   --test_size 0.1 \
   --valid_size 0.1 \
   --min_quality_score 0.7
-# Output: data/final_v3/{train,valid,test}.jsonl (current snapshot: 9,406 pairs total)
+# Output: data/final_v3/{train,valid,test}.jsonl (current snapshot: 9,910 pairs total)
 ```
 
 **Success Criteria:**
-- [ ] 9,406 total pairs preserved after refresh
+- [ ] 9,910 total pairs preserved after refresh
 - [ ] Supplement retained alongside Bible-derived data
 - [ ] Alignment issues clearly documented before training
 - [ ] ≥20% philosophy/culture/ceremony/governance domains
@@ -651,7 +651,7 @@ Edit `docs/model_card.md`:
 - **Name:** maasai-en-mt
 - **Base Model:** Qwen/Qwen2.5-3B-Instruct
 - **Fine-tuning Plan:** QLoRA (4-bit, r=16, lr=2e-4)
-- **Training Data:** 9,406 English ↔ Maasai pairs from `data/final_v3`
+- **Training Data:** 9,910 English ↔ Maasai pairs from `data/final_v3`
 - **Languages:** English (en) ↔ Maasai/Maa (mas)
 
 ## Current Status
@@ -677,12 +677,12 @@ Edit `docs/dataset_card.md`:
 # Dataset Card: maasai-translation-corpus v1.0
 
 ## Dataset Summary
-- **Total Pairs:** 9,406 (bilingual English ↔ Maasai)
-- **Train/Valid/Test Split:** 7,991 / 707 / 708
+- **Total Pairs:** 9,910 (bilingual English ↔ Maasai)
+- **Train/Valid/Test Split:** 8,434 / 738 / 738
 - **Data Sources:**
-  - Bible-derived: 8,444 (89.8%)
-  - Cultural/open-source supplement: 962 (10.2%)
-  - Named source examples: `cultural_manual`, `hollis_1905_public_domain`, `asjp_maasai_cc_by_4`
+  - Bible-derived: 8,444 (85.2%)
+  - Cultural/open-source supplement: 1,466 (14.8%)
+  - Named source examples: `cultural_manual`, `hollis_1905_public_domain`, `hinde_1901_public_domain`, `asjp_maasai_cc_by_4`
 
 ## Quality Indicators
 - Quality labels present for 8,444 `gold` and 962 `silver` rows
@@ -854,9 +854,9 @@ Update main `README.md` with:
 
 ## 🎯 What's New
 
-- ✅ **Dataset snapshot:** 9,406 bilingual pairs in `data/final_v3`
-  - Current split: 7,991 train / 707 valid / 708 test
-  - Current labels: 8,444 gold / 962 silver
+- ✅ **Dataset snapshot:** 9,910 bilingual pairs in `data/final_v3`
+  - Current split: 8,434 train / 738 valid / 738 test
+  - Current labels: 8,444 gold / 1,466 silver
   
 - ✅ **Model status:** QLoRA pipeline ready on Qwen2.5-3B-Instruct
   - Local artifacts are placeholders until a real run completes

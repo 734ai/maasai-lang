@@ -226,7 +226,7 @@ def main():
     print(f"""
 ╔════════════════════════════════════════════════════════════╗
 ║  🦁 Maasai Language Project - HuggingFace Deployment      ║
-║      Version: 2.0 | Dataset: 9,406 pairs                  ║
+║      Version: 2.0 | Dataset: 9,910 pairs                  ║
 ╚════════════════════════════════════════════════════════════╝
 """)
     
